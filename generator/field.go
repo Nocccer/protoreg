@@ -73,13 +73,15 @@ func (g *ProtoRegGen) extractField(
 		field.Name = name
 		field.Size = 1
 		field.IsCustomType = t.Type.String() != "int16"
+		field.Encoding = g.encoding
+		field.WordOrder = g.wordOrder
 		var imports string
 		if field.IsCustomType {
 			field.CustomType, imports = g.extractCustomType(t.Type.String())
 		}
 		return ExtractResult{
 			Gen:    FieldInt16{Field: field},
-			Len:    field.Offset + 1,
+			Len:    field.Offset + field.Size,
 			Import: imports,
 		}, nil
 	case "uint16":
@@ -94,13 +96,38 @@ func (g *ProtoRegGen) extractField(
 		field.Name = name
 		field.Size = 1
 		field.IsCustomType = t.Type.String() != "uint16"
+		field.Encoding = g.encoding
+		field.WordOrder = g.wordOrder
 		var imports string
 		if field.IsCustomType {
 			field.CustomType, imports = g.extractCustomType(t.Type.String())
 		}
 		return ExtractResult{
 			Gen:    FieldUint16{Field: field},
-			Len:    field.Offset + 1,
+			Len:    field.Offset + field.Size,
+			Import: imports,
+		}, nil
+	case "uint32":
+		field, err := ExtractIntegerTags(tagStr)
+		if err != nil {
+			return ExtractResult{}, fmt.Errorf(
+				"failed to extract integer tags for %s: %v",
+				name,
+				err,
+			)
+		}
+		field.Name = name
+		field.Size = 2
+		field.IsCustomType = t.Type.String() != "uint32"
+		field.Encoding = g.encoding
+		field.WordOrder = g.wordOrder
+		var imports string
+		if field.IsCustomType {
+			field.CustomType, imports = g.extractCustomType(t.Type.String())
+		}
+		return ExtractResult{
+			Gen:    FieldUint32{Field: field},
+			Len:    field.Offset + field.Size,
 			Import: imports,
 		}, nil
 	case "string":
@@ -114,6 +141,8 @@ func (g *ProtoRegGen) extractField(
 		}
 		field.Name = name
 		field.IsCustomType = t.Type.String() != "string"
+		field.Encoding = g.encoding
+		field.WordOrder = g.wordOrder
 		var imports string
 		if field.IsCustomType {
 			field.CustomType, imports = g.extractCustomType(t.Type.String())
@@ -156,4 +185,26 @@ func (g *ProtoRegGen) extractCustomType(typePath string) (string, string) {
 		slog.String("import", imp),
 	)
 	return typ, imp
+}
+
+func (g *ProtoRegGen) extractOpts(tagStr string) error {
+	// Extract encoding and word order from the tag string
+	parts := strings.Split(tagStr, ",")
+	for _, part := range parts {
+		switch {
+		case strings.HasPrefix(part, "encoding="):
+			g.encoding = Encoding(strings.TrimPrefix(part, "encoding="))
+		case strings.HasPrefix(part, "wordOrder="):
+			g.wordOrder = WordOrder(strings.TrimPrefix(part, "wordOrder="))
+		}
+	}
+
+	if g.encoding != BigEndian && g.encoding != LittleEndian {
+		return fmt.Errorf("invalid encoding: %v", g.encoding)
+	}
+	if g.wordOrder != HighWordFirst && g.wordOrder != LowWordFirst {
+		return fmt.Errorf("invalid word order: %v", g.wordOrder)
+	}
+
+	return nil
 }

@@ -5,19 +5,19 @@ import (
 	"github.com/Nocccer/protoreg/test/sub"
 )
 
-func (m Struct1) Marshal() ([]uint16, error) {
+func (m Struct2) Marshal() ([]uint16, error) {
 	buf := make([]uint16, 22)
 	// Field1
 	for i := 0; i < len(m.Field1); i++ {
 		if i >= 8 {break}
-		buf[0+i] = uint16(m.Field1[i])
+		buf[0+i] = uint16(m.Field1[i])<<8
 	}
 	// Field2
-	buf[8] = uint16(m.Field2)
+	buf[8] = uint16(m.Field2)>>8 | uint16(m.Field2)<<8
 	// Field3
-	buf[9] = uint16(m.Field3)
+	buf[9] = uint16(m.Field3>>8) | uint16(m.Field3<<8)
 	// Field4
-	buf[10] = m.Field4
+	buf[10] = m.Field4>>8 | m.Field4<<8
 	// Field5
 	length := len(m.Field5)
 	if length % 2 != 0 { length += 1 }
@@ -25,47 +25,47 @@ func (m Struct1) Marshal() ([]uint16, error) {
 	copy(bytes, m.Field5)
 	for i := 0; i < length; i+=2 {
 		if i >= 16 {break}
-		buf[11+i/2] = uint16(bytes[i]) | uint16(bytes[i+1])<<8
+		buf[11+i/2] = uint16(bytes[i])<<8 | uint16(bytes[i+1])
 	}
 	// Field6
-	buf[19] = uint16(m.Field6)
+	buf[19] = uint16(m.Field6)>>8 | uint16(m.Field6)<<8
 	// Field7
-	buf[20] = uint16(m.Field7)
-	buf[21] = uint16(m.Field7>>16)
+	buf[20] = uint16(m.Field7>>8) | uint16(m.Field7<<8)
+	buf[21] = uint16(m.Field7>>24) | uint16(m.Field7<<24)
 
 	return buf, nil
 }
 
-func (m *Struct1) Unmarshal(buf []uint16) error {
+func (m *Struct2) Unmarshal(buf []uint16) error {
 	var bytes []byte
 	// Field1
 	bytes = make([]byte, 8)
 	for i, v := range buf[0:8] {
 		if v == 0 {bytes = bytes[:i];break} // stop on empty char
-		bytes[i] = byte(v)
+		bytes[i] = byte(v>>8)
 	}
 	m.Field1 = string(bytes)
 	// Field2
-	m.Field2 = int16(buf[8])
+	m.Field2 = int16(buf[8]>>8 | buf[8]<<8)
 	// Field3
-	m.Field3 = CustomUint16(buf[9])
+	m.Field3 = CustomUint16(buf[9]>>8 | buf[9]<<8)
 	// Field4
-	m.Field4 = buf[10]
+	m.Field4 = buf[10]>>8 | buf[10]<<8
 	// Field5
 	bytes = make([]byte, 8)
 	for i, v := range buf[11:19] {
-		low := byte(v)
+		low := byte(v>>8)
 		if low == 0 {bytes = bytes[:i*2];break} // stop on empty char
 		bytes[i*2] = low
-		high := byte(v >> 8)
+		high := byte(v)
 		if high == 0 {bytes = bytes[:i*2+1];break} // stop on empty char
 		bytes[i*2+1] = high
 	}
 	m.Field5 = string(bytes)
 	// Field6
-	m.Field6 = sub.CustomInt16(int16(buf[19]))
+	m.Field6 = sub.CustomInt16(int16(buf[19]>>8 | buf[19]<<8))
 	// Field7
-	m.Field7 = uint32(buf[20]) | uint32(buf[21]) << 16
+	m.Field7 = uint32(buf[20]>>8 | buf[20]<<8) | uint32(buf[21]>>8 | buf[21]<<8)<<16
 
 	return nil
 }

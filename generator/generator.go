@@ -14,19 +14,23 @@ import (
 )
 
 type ProtoRegGen struct {
-	types   []string
-	dir     string
-	pkg     string
-	log     *slog.Logger
-	imports []string
-	content string
+	types     []string
+	dir       string
+	pkg       string
+	log       *slog.Logger
+	imports   []string
+	content   string
+	encoding  Encoding
+	wordOrder WordOrder
 }
 
 func NewGenerator(types []string, dir string, log *slog.Logger) *ProtoRegGen {
 	return &ProtoRegGen{
-		types: types,
-		dir:   dir,
-		log:   log,
+		types:     types,
+		dir:       dir,
+		log:       log,
+		encoding:  BigEndian,
+		wordOrder: HighWordFirst,
 	}
 }
 
@@ -174,16 +178,34 @@ func (g *ProtoRegGen) genFromStruct(
 
 	structRes := StructResult{}
 	gen := GenModeAll
-	len := 0
+	length := 0
 	gens := []Generator{}
 
+	// extract encoding and wordorder from empty field
+	idx := slices.IndexFunc(typ.Fields.List, func(field *ast.Field) bool {
+		return field.Names[0].Name == "_"
+	})
+	if idx != -1 {
+		tagStr, ok := extractTag(typ.Fields.List[idx].Tag.Value)
+		if ok {
+			if err := g.extractOpts(tagStr); err != nil {
+				return StructResult{}, err
+			}
+		}
+	}
+
+	g.log.Debug(
+		"extract options",
+		slog.String("encoding", string(g.encoding)),
+		slog.String("wordorder", string(g.wordOrder)),
+	)
+
 	for _, field := range typ.Fields.List {
-		if field.Tag == nil {
+		if field.Tag == nil || field.Names[0].Name == "_" {
 			continue
 		}
 
-		tags := strings.Trim(field.Tag.Value, "`")
-		tagStr, ok := reflect.StructTag(tags).Lookup("protoreg")
+		tagStr, ok := extractTag(field.Tag.Value)
 		if !ok {
 			continue
 		}
@@ -194,8 +216,8 @@ func (g *ProtoRegGen) genFromStruct(
 		}
 		gens = append(gens, res.Gen)
 
-		if res.Len > len {
-			len = res.Len
+		if res.Len > length {
+			length = res.Len
 		}
 
 		if !slices.Contains(structRes.Imports, res.Import) {
@@ -208,7 +230,7 @@ func (g *ProtoRegGen) genFromStruct(
 		g.log.Debug("generate marshaler")
 
 		sb.WriteString(fmt.Sprintf("func (m %s) Marshal() ([]uint16, error) {\n", name))
-		sb.WriteString(fmt.Sprintf("\tbuf := make([]uint16, %d)\n", len))
+		sb.WriteString(fmt.Sprintf("\tbuf := make([]uint16, %d)\n", length))
 
 		for _, gen := range gens {
 			sb.WriteString(gen.Marshaler())
@@ -242,4 +264,9 @@ func (g *ProtoRegGen) genFromStruct(
 	structRes.Code = sb.String()
 
 	return structRes, nil
+}
+
+func extractTag(tagStr string) (string, bool) {
+	tags := strings.Trim(tagStr, "`")
+	return reflect.StructTag(tags).Lookup("protoreg")
 }

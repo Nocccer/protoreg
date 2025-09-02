@@ -8,91 +8,6 @@ import (
 	"strings"
 )
 
-type Char string
-
-const (
-	Char8  Char = "8"
-	Char16 Char = "16"
-)
-
-func (c Char) Validate() error {
-	switch c {
-	case Char8, Char16:
-		return nil
-	}
-	return errors.New(`invalid "char" value`)
-}
-
-type FieldString struct {
-	Field
-	Char Char
-}
-
-func (f FieldString) Marshaler() string {
-	var sb strings.Builder
-
-	sb.WriteString(f.Comment())
-
-	switch f.Char {
-	case Char8:
-		sb.WriteString(fmt.Sprintf("\tlength := len(m.%s)\n", f.Name))
-		sb.WriteString("\tif length % 2 != 0 { length += 1 }\n")
-		sb.WriteString("\tbytes := make([]byte, length)\n")
-		sb.WriteString(fmt.Sprintf("\tcopy(bytes, m.%s)\n", f.Name))
-		sb.WriteString("\tfor i := 0; i < length; i+=2 {\n")
-		sb.WriteString(fmt.Sprintf("\t\tif i >= %d {break}\n", f.Size*2))
-		sb.WriteString(
-			fmt.Sprintf(
-				"\t\tbuf[%d+i/2] = uint16(bytes[i+1]) | uint16(bytes[i])<<8\n",
-				f.Offset,
-			),
-		)
-		sb.WriteString("\t}\n")
-	case Char16:
-		sb.WriteString(fmt.Sprintf("\tfor i := 0; i < len(m.%s); i++ {\n", f.Name))
-		sb.WriteString(fmt.Sprintf("\t\tif i >= %d {break}\n", f.Size))
-		sb.WriteString(
-			fmt.Sprintf(
-				"\t\tbuf[%d+i] = uint16(m.%s[i])\n",
-				f.Offset,
-				f.Name,
-			),
-		)
-		sb.WriteString("\t}\n")
-	}
-
-	return sb.String()
-}
-
-func (f FieldString) Unmarshaler() string {
-	var sb strings.Builder
-
-	sb.WriteString(f.Comment())
-
-	switch f.Char {
-	case Char8:
-		sb.WriteString(fmt.Sprintf("\tbytes = make([]byte, %d)\n", f.Size))
-		sb.WriteString(fmt.Sprintf("\tfor i, v := range buf[%d:%d] {\n", f.Offset, f.Offset+f.Size))
-		sb.WriteString("\t\tlow := byte(v >> 8)\n")
-		sb.WriteString("\t\tif low == 0 {bytes = bytes[:i*2];break} // stop on empty char\n")
-		sb.WriteString("\t\tbytes[i*2] = low\n")
-		sb.WriteString("\t\thigh := byte(v)\n")
-		sb.WriteString("\t\tif high == 0 {bytes = bytes[:i*2+1];break} // stop on empty char\n")
-		sb.WriteString("\t\tbytes[i*2+1] = high\n")
-		sb.WriteString("\t}\n")
-		sb.WriteString(fmt.Sprintf("\tm.%s = string(bytes)\n", f.Name))
-	case Char16:
-		sb.WriteString(fmt.Sprintf("\tbytes = make([]byte, %d)\n", f.Size))
-		sb.WriteString(fmt.Sprintf("\tfor i, v := range buf[%d:%d] {\n", f.Offset, f.Offset+f.Size))
-		sb.WriteString("\t\tif v == 0 {bytes = bytes[:i];break} // stop on empty char\n")
-		sb.WriteString("\t\tbytes[i] = byte(v)\n")
-		sb.WriteString("\t}\n")
-		sb.WriteString(fmt.Sprintf("\tm.%s = string(bytes)\n", f.Name))
-	}
-
-	return sb.String()
-}
-
 func ExtractStringsTags(tagStr string) (FieldString, error) {
 	var field FieldString
 	var err error
@@ -155,4 +70,115 @@ func ExtractStringsTags(tagStr string) (FieldString, error) {
 	}
 
 	return field, nil
+}
+
+type Char string
+
+const (
+	Char8  Char = "8"
+	Char16 Char = "16"
+)
+
+func (c Char) Validate() error {
+	switch c {
+	case Char8, Char16:
+		return nil
+	}
+	return errors.New(`invalid "char" value`)
+}
+
+type FieldString struct {
+	Field
+	Char Char
+}
+
+func (f FieldString) Marshaler() string {
+	var sb strings.Builder
+
+	sb.WriteString(f.Comment())
+
+	switch f.Char {
+	case Char8:
+		sb.WriteString(fmt.Sprintf("\tlength := len(m.%s)\n", f.Name))
+		sb.WriteString("\tif length % 2 != 0 { length += 1 }\n")
+		sb.WriteString("\tbytes := make([]byte, length)\n")
+		sb.WriteString(fmt.Sprintf("\tcopy(bytes, m.%s)\n", f.Name))
+		sb.WriteString("\tfor i := 0; i < length; i+=2 {\n")
+		sb.WriteString(fmt.Sprintf("\t\tif i >= %d {break}\n", f.Size*2))
+		if f.Encoding == BigEndian {
+			sb.WriteString(
+				fmt.Sprintf(
+					"\t\tbuf[%d+i/2] = uint16(bytes[i]) | uint16(bytes[i+1])<<8\n",
+					f.Offset,
+				),
+			)
+		} else {
+			sb.WriteString(
+				fmt.Sprintf(
+					"\t\tbuf[%d+i/2] = uint16(bytes[i])<<8 | uint16(bytes[i+1])\n",
+					f.Offset,
+				),
+			)
+		}
+		sb.WriteString("\t}\n")
+	case Char16:
+		sb.WriteString(fmt.Sprintf("\tfor i := 0; i < len(m.%s); i++ {\n", f.Name))
+		sb.WriteString(fmt.Sprintf("\t\tif i >= %d {break}\n", f.Size))
+		shift := ""
+		if f.Encoding == LittleEndian {
+			shift = "<<8"
+		}
+		sb.WriteString(
+			fmt.Sprintf(
+				"\t\tbuf[%d+i] = uint16(m.%s[i])%s\n",
+				f.Offset,
+				f.Name,
+				shift,
+			),
+		)
+		sb.WriteString("\t}\n")
+	}
+
+	return sb.String()
+}
+
+func (f FieldString) Unmarshaler() string {
+	var sb strings.Builder
+
+	sb.WriteString(f.Comment())
+
+	switch f.Char {
+	case Char8:
+		sb.WriteString(fmt.Sprintf("\tbytes = make([]byte, %d)\n", f.Size))
+		sb.WriteString(fmt.Sprintf("\tfor i, v := range buf[%d:%d] {\n", f.Offset, f.Offset+f.Size))
+		if f.Encoding == BigEndian {
+			sb.WriteString("\t\tlow := byte(v)\n")
+		} else {
+			sb.WriteString("\t\tlow := byte(v>>8)\n")
+		}
+		sb.WriteString("\t\tif low == 0 {bytes = bytes[:i*2];break} // stop on empty char\n")
+		sb.WriteString("\t\tbytes[i*2] = low\n")
+		if f.Encoding == BigEndian {
+			sb.WriteString("\t\thigh := byte(v >> 8)\n")
+		} else {
+			sb.WriteString("\t\thigh := byte(v)\n")
+		}
+		sb.WriteString("\t\tif high == 0 {bytes = bytes[:i*2+1];break} // stop on empty char\n")
+		sb.WriteString("\t\tbytes[i*2+1] = high\n")
+		sb.WriteString("\t}\n")
+		sb.WriteString(fmt.Sprintf("\tm.%s = string(bytes)\n", f.Name))
+	case Char16:
+		sb.WriteString(fmt.Sprintf("\tbytes = make([]byte, %d)\n", f.Size))
+		sb.WriteString(fmt.Sprintf("\tfor i, v := range buf[%d:%d] {\n", f.Offset, f.Offset+f.Size))
+		sb.WriteString("\t\tif v == 0 {bytes = bytes[:i];break} // stop on empty char\n")
+		shift := ""
+		if f.Encoding == LittleEndian {
+			shift = ">>8"
+		}
+		sb.WriteString(fmt.Sprintf("\t\tbytes[i] = byte(v%s)\n", shift))
+		sb.WriteString("\t}\n")
+		sb.WriteString(fmt.Sprintf("\tm.%s = string(bytes)\n", f.Name))
+	}
+
+	return sb.String()
 }

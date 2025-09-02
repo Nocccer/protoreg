@@ -7,17 +7,17 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-func TestStruct1(t *testing.T) {
-	suite.Run(t, new(Struct1TestSuite))
+func TestStruct2(t *testing.T) {
+	suite.Run(t, new(Struct2TestSuite))
 }
 
-type Struct1TestSuite struct {
+type Struct2TestSuite struct {
 	suite.Suite
-	struct1 Struct1
+	struct2 Struct2
 }
 
-func (s *Struct1TestSuite) SetupTest() {
-	s.struct1 = Struct1{
+func (s *Struct2TestSuite) SetupTest() {
+	s.struct2 = Struct2{
 		Ignored: 0,
 		Field1:  "TestDat",
 		Field2:  -42,
@@ -29,19 +29,19 @@ func (s *Struct1TestSuite) SetupTest() {
 	}
 }
 
-func (s *Struct1TestSuite) TestMarshalUnmarshal() {
-	reg, err := s.struct1.Marshal()
+func (s *Struct2TestSuite) TestMarshalUnmarshal() {
+	reg, err := s.struct2.Marshal()
 	s.Require().NoError(err)
 
-	out := &Struct1{}
+	out := &Struct2{}
 	err = out.Unmarshal(reg)
 	s.Require().NoError(err)
 
-	s.Equal(s.struct1, *out)
+	s.Equal(s.struct2, *out)
 }
 
-func BenchmarkStruct1Marshal(b *testing.B) {
-	test := &Struct1{
+func BenchmarkStruct2Marshal(b *testing.B) {
+	test := &Struct2{
 		Ignored: 0,
 		Field1:  "Test Data",
 		Field2:  -42,
@@ -60,8 +60,8 @@ func BenchmarkStruct1Marshal(b *testing.B) {
 	}
 }
 
-func BenchmarkStruct1Unmarshal(b *testing.B) {
-	test := &Struct1{
+func BenchmarkStruct2Unmarshal(b *testing.B) {
+	test := &Struct2{
 		Ignored: 0,
 		Field1:  "Test Data",
 		Field2:  -42,
@@ -77,7 +77,7 @@ func BenchmarkStruct1Unmarshal(b *testing.B) {
 		b.Fatal(err)
 	}
 
-	test = &Struct1{}
+	test = &Struct2{}
 
 	for b.Loop() {
 		err := test.Unmarshal(reg)
