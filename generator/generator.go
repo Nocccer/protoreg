@@ -6,7 +6,6 @@ import (
 	"go/types"
 	"log/slog"
 	"os"
-	"reflect"
 	"slices"
 	"strings"
 
@@ -78,7 +77,6 @@ func (g *ProtoRegGen) Generate() error {
 					}
 
 					g.content += res.Code
-					g.imports = append(g.imports, res.Imports...)
 				}
 			}
 		}
@@ -162,8 +160,7 @@ const (
 )
 
 type StructResult struct {
-	Code    string
-	Imports []string
+	Code string
 }
 
 func (g *ProtoRegGen) genFromStruct(
@@ -186,7 +183,7 @@ func (g *ProtoRegGen) genFromStruct(
 		return field.Names[0].Name == "_"
 	})
 	if idx != -1 {
-		tagStr, ok := extractTag(typ.Fields.List[idx].Tag.Value)
+		tagStr, ok := extractProtoRegTag(typ.Fields.List[idx].Tag.Value)
 		if ok {
 			if err := g.extractOpts(tagStr); err != nil {
 				return StructResult{}, err
@@ -205,7 +202,7 @@ func (g *ProtoRegGen) genFromStruct(
 			continue
 		}
 
-		tagStr, ok := extractTag(field.Tag.Value)
+		tagStr, ok := extractProtoRegTag(field.Tag.Value)
 		if !ok {
 			continue
 		}
@@ -218,10 +215,6 @@ func (g *ProtoRegGen) genFromStruct(
 
 		if res.Len > length {
 			length = res.Len
-		}
-
-		if !slices.Contains(structRes.Imports, res.Import) {
-			structRes.Imports = append(structRes.Imports, res.Import)
 		}
 	}
 
@@ -264,9 +257,4 @@ func (g *ProtoRegGen) genFromStruct(
 	structRes.Code = sb.String()
 
 	return structRes, nil
-}
-
-func extractTag(tagStr string) (string, bool) {
-	tags := strings.Trim(tagStr, "`")
-	return reflect.StructTag(tags).Lookup("protoreg")
 }

@@ -1,0 +1,93 @@
+package tests_test
+
+import (
+	"testing"
+
+	"github.com/Nocccer/protoreg/tests"
+	"github.com/Nocccer/protoreg/tests/sub"
+	"github.com/stretchr/testify/suite"
+)
+
+func TestBigEndianHighWord(t *testing.T) {
+	suite.Run(t, new(BigEndianHighWordTestSuite))
+}
+
+type BigEndianHighWordTestSuite struct {
+	suite.Suite
+	BigEndianHighWord tests.BigEndianHighWord
+}
+
+func (s *BigEndianHighWordTestSuite) SetupTest() {
+	s.BigEndianHighWord = tests.BigEndianHighWord{
+		Ignored:      0x4321,
+		Uint16:       0x1234,
+		Int16:        -42,
+		Uint32:       0x12345678,
+		String8:      "TestData",
+		String16:     "Überlauf",
+		CustomUint16: tests.CustomUint16(123),
+		CustomInt16:  sub.CustomInt16(-789),
+	}
+}
+
+func (s *BigEndianHighWordTestSuite) TestMarshalUnmarshal() {
+	reg, err := s.BigEndianHighWord.Marshal()
+	s.Require().NoError(err)
+
+	out := &tests.BigEndianHighWord{}
+	err = out.Unmarshal(reg)
+	s.Require().NoError(err)
+
+	s.Empty(out.Ignored)
+
+	out.Ignored = s.BigEndianHighWord.Ignored // Ignored field is not set by Unmarshal, set it manually for comparison
+
+	s.Equal(s.BigEndianHighWord, *out)
+}
+
+func BenchmarkBigEndianHighWordMarshal(b *testing.B) {
+	test := &tests.BigEndianHighWord{
+		Ignored:      0x4321,
+		Uint16:       0x1234,
+		Int16:        -42,
+		Uint32:       0x12345678,
+		String8:      "TestData",
+		String16:     "テストデータ",
+		CustomUint16: tests.CustomUint16(123),
+		CustomInt16:  sub.CustomInt16(-789),
+	}
+
+	for b.Loop() {
+		_, err := test.Marshal()
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkBigEndianHighWordUnmarshal(b *testing.B) {
+	test := &tests.BigEndianHighWord{
+		Ignored:      0x4321,
+		Uint16:       0x1234,
+		Int16:        -42,
+		Uint32:       0x12345678,
+		String8:      "TestData",
+		String16:     "テストデータ",
+		CustomUint16: tests.CustomUint16(123),
+		CustomInt16:  sub.CustomInt16(-789),
+	}
+
+	reg, err := test.Marshal()
+	if err != nil {
+		b.Fatal(err)
+	}
+
+	test = &tests.BigEndianHighWord{}
+
+	for b.Loop() {
+		err := test.Unmarshal(reg)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}

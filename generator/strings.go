@@ -1,95 +1,52 @@
 package generator
 
 import (
-	"errors"
 	"fmt"
-	"slices"
-	"strconv"
+	"go/types"
 	"strings"
 )
 
-func ExtractStringsTags(tagStr string) (FieldString, error) {
-	var field FieldString
-	var err error
-
-	tags := strings.Split(tagStr, ",")
-
-	if len(tags) != 3 {
-		return FieldString{}, errors.New(`invalid tags, expected "offset", "size" and "char"`)
+func (g *ProtoRegGen) newStringGen(name string, typ types.Type, tags Tags) (NewGenResult, error) {
+	field := Field{
+		Name:         name,
+		Tags:         tags,
+		IsCustomType: typ.String() != typ.Underlying().String(),
 	}
 
-	offsetIndex := slices.IndexFunc(tags, func(s string) bool {
-		return strings.HasPrefix(s, "offset")
-	})
-	if offsetIndex == -1 {
-		return FieldString{}, errors.New(`missing "offset" tag`)
+	if field.IsCustomType {
+		field.CustomType = g.extractCustomType(typ.String())
 	}
 
-	kv := strings.Split(tags[offsetIndex], "=")
-	if len(kv) != 2 {
-		return FieldString{}, errors.New(`invalid "offset" tag format`)
+	if field.Tags.Offset == nil {
+		return NewGenResult{}, fmt.Errorf(`missing "offset" tag for %s`, name)
 	}
 
-	field.Offset, err = strconv.Atoi(kv[1])
-	if err != nil {
-		return FieldString{}, errors.New(`invalid "offset" value`)
+	if field.Tags.Size == nil {
+		return NewGenResult{}, fmt.Errorf(`missing "size" tag for %s`, name)
 	}
 
-	sizeIndex := slices.IndexFunc(tags, func(s string) bool {
-		return strings.HasPrefix(s, "size")
-	})
-	if sizeIndex == -1 {
-		return FieldString{}, errors.New(`missing "size" tag`)
+	if field.Tags.Char == nil {
+		return NewGenResult{}, fmt.Errorf(`missing "char" tag for %s`, name)
 	}
 
-	kv = strings.Split(tags[sizeIndex], "=")
-	if len(kv) != 2 {
-		return FieldString{}, errors.New(`invalid "size" tag format`)
+	if field.Tags.Encoding == nil {
+		field.Tags.Encoding = &g.encoding
 	}
 
-	field.Size, err = strconv.Atoi(kv[1])
-	if err != nil {
-		return FieldString{}, errors.New(`invalid "size" value`)
+	if field.Tags.WordOrder == nil {
+		field.Tags.WordOrder = &g.wordOrder
 	}
 
-	charIndex := slices.IndexFunc(tags, func(s string) bool {
-		return strings.HasPrefix(s, "char")
-	})
-	if charIndex == -1 {
-		return FieldString{}, errors.New(`missing "char" tag`)
-	}
-
-	kv = strings.Split(tags[charIndex], "=")
-	if len(kv) != 2 {
-		return FieldString{}, errors.New(`invalid "char" tag format`)
-	}
-
-	field.Char = Char(kv[1])
-	if err := field.Char.Validate(); err != nil {
-		return FieldString{}, err
-	}
-
-	return field, nil
-}
-
-type Char string
-
-const (
-	Char8  Char = "8"
-	Char16 Char = "16"
-)
-
-func (c Char) Validate() error {
-	switch c {
-	case Char8, Char16:
-		return nil
-	}
-	return errors.New(`invalid "char" value`)
+	return NewGenResult{
+		Gen: FieldString{
+			Field: field,
+		},
+		Len: *field.Tags.Offset + *field.Tags.Size,
+	}, nil
 }
 
 type FieldString struct {
 	Field
-	Char Char
 }
 
 func (f FieldString) Marshaler() string {
@@ -97,41 +54,41 @@ func (f FieldString) Marshaler() string {
 
 	sb.WriteString(f.Comment())
 
-	switch f.Char {
+	switch *f.Tags.Char {
 	case Char8:
 		sb.WriteString(fmt.Sprintf("\tlength := len(m.%s)\n", f.Name))
 		sb.WriteString("\tif length % 2 != 0 { length += 1 }\n")
 		sb.WriteString("\tbytes := make([]byte, length)\n")
 		sb.WriteString(fmt.Sprintf("\tcopy(bytes, m.%s)\n", f.Name))
 		sb.WriteString("\tfor i := 0; i < length; i+=2 {\n")
-		sb.WriteString(fmt.Sprintf("\t\tif i >= %d {break}\n", f.Size*2))
-		if f.Encoding == BigEndian {
+		sb.WriteString(fmt.Sprintf("\t\tif i >= %d {break}\n", *f.Tags.Size*2))
+		if *f.Tags.Encoding == BigEndian {
 			sb.WriteString(
 				fmt.Sprintf(
 					"\t\tbuf[%d+i/2] = uint16(bytes[i]) | uint16(bytes[i+1])<<8\n",
-					f.Offset,
+					*f.Tags.Offset,
 				),
 			)
 		} else {
 			sb.WriteString(
 				fmt.Sprintf(
 					"\t\tbuf[%d+i/2] = uint16(bytes[i])<<8 | uint16(bytes[i+1])\n",
-					f.Offset,
+					*f.Tags.Offset,
 				),
 			)
 		}
 		sb.WriteString("\t}\n")
 	case Char16:
 		sb.WriteString(fmt.Sprintf("\tfor i := 0; i < len(m.%s); i++ {\n", f.Name))
-		sb.WriteString(fmt.Sprintf("\t\tif i >= %d {break}\n", f.Size))
+		sb.WriteString(fmt.Sprintf("\t\tif i >= %d {break}\n", *f.Tags.Size))
 		shift := ""
-		if f.Encoding == LittleEndian {
+		if *f.Tags.Encoding == LittleEndian {
 			shift = "<<8"
 		}
 		sb.WriteString(
 			fmt.Sprintf(
 				"\t\tbuf[%d+i] = uint16(m.%s[i])%s\n",
-				f.Offset,
+				*f.Tags.Offset,
 				f.Name,
 				shift,
 			),
@@ -147,18 +104,24 @@ func (f FieldString) Unmarshaler() string {
 
 	sb.WriteString(f.Comment())
 
-	switch f.Char {
+	switch *f.Tags.Char {
 	case Char8:
-		sb.WriteString(fmt.Sprintf("\tbytes = make([]byte, %d)\n", f.Size))
-		sb.WriteString(fmt.Sprintf("\tfor i, v := range buf[%d:%d] {\n", f.Offset, f.Offset+f.Size))
-		if f.Encoding == BigEndian {
+		sb.WriteString(fmt.Sprintf("\tbytes = make([]byte, %d)\n", *f.Tags.Size))
+		sb.WriteString(
+			fmt.Sprintf(
+				"\tfor i, v := range buf[%d:%d] {\n",
+				*f.Tags.Offset,
+				*f.Tags.Offset+*f.Tags.Size,
+			),
+		)
+		if *f.Tags.Encoding == BigEndian {
 			sb.WriteString("\t\tlow := byte(v)\n")
 		} else {
 			sb.WriteString("\t\tlow := byte(v>>8)\n")
 		}
 		sb.WriteString("\t\tif low == 0 {bytes = bytes[:i*2];break} // stop on empty char\n")
 		sb.WriteString("\t\tbytes[i*2] = low\n")
-		if f.Encoding == BigEndian {
+		if *f.Tags.Encoding == BigEndian {
 			sb.WriteString("\t\thigh := byte(v >> 8)\n")
 		} else {
 			sb.WriteString("\t\thigh := byte(v)\n")
@@ -168,11 +131,17 @@ func (f FieldString) Unmarshaler() string {
 		sb.WriteString("\t}\n")
 		sb.WriteString(fmt.Sprintf("\tm.%s = string(bytes)\n", f.Name))
 	case Char16:
-		sb.WriteString(fmt.Sprintf("\tbytes = make([]byte, %d)\n", f.Size))
-		sb.WriteString(fmt.Sprintf("\tfor i, v := range buf[%d:%d] {\n", f.Offset, f.Offset+f.Size))
+		sb.WriteString(fmt.Sprintf("\tbytes = make([]byte, %d)\n", *f.Tags.Size))
+		sb.WriteString(
+			fmt.Sprintf(
+				"\tfor i, v := range buf[%d:%d] {\n",
+				*f.Tags.Offset,
+				*f.Tags.Offset+*f.Tags.Size,
+			),
+		)
 		sb.WriteString("\t\tif v == 0 {bytes = bytes[:i];break} // stop on empty char\n")
 		shift := ""
-		if f.Encoding == LittleEndian {
+		if *f.Tags.Encoding == LittleEndian {
 			shift = ">>8"
 		}
 		sb.WriteString(fmt.Sprintf("\t\tbytes[i] = byte(v%s)\n", shift))

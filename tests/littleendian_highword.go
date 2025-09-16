@@ -1,12 +1,11 @@
-package test
+package tests
 
-import "github.com/Nocccer/protoreg/test/sub"
+import "github.com/Nocccer/protoreg/tests/sub"
 
-//go:generate go run ../cmd/main.go -type=Struct1 -v
+//go:generate go run ../cmd/main.go -type=LittleEndianHighWord -v
 
-type CustomUint16 uint16
-
-type Struct1 struct {
+type LittleEndianHighWord struct {
+	_       struct{} `protoreg:"encoding=little"`
 	Ignored uint16
 	Field1  string          `protoreg:"offset=0,size=8,char=16"`
 	Field2  int16           `protoreg:"offset=8"`

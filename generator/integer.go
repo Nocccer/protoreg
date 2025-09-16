@@ -1,32 +1,116 @@
 package generator
 
 import (
-	"errors"
 	"fmt"
-	"strconv"
+	"go/types"
 	"strings"
 )
 
-func ExtractIntegerTags(tagStr string) (Field, error) {
-	tags := strings.Split(tagStr, ",")
+type NewGenResult struct {
+	Gen Generator
+	Len int
+}
 
-	if len(tags) > 1 {
-		return Field{}, errors.New(`too many tags, only "offset" is needed`)
+func (g *ProtoRegGen) newIntegerGen(name string, typ types.Type, tags Tags) (NewGenResult, error) {
+	field := Field{
+		Name:         name,
+		Tags:         tags,
+		IsCustomType: typ.String() != typ.Underlying().String(),
 	}
 
-	kv := strings.Split(tags[0], "=")
-	if len(kv) != 2 {
-		return Field{}, errors.New(`invalid "offset" tag format`)
+	if field.IsCustomType {
+		field.CustomType = g.extractCustomType(typ.String())
 	}
 
-	offset, err := strconv.Atoi(kv[1])
-	if err != nil {
-		return Field{}, errors.New(`invalid "offset" value`)
+	if field.Tags.Offset == nil {
+		return NewGenResult{}, fmt.Errorf(`missing "offset" tag for %s`, name)
 	}
 
-	return Field{
-		Offset: offset,
-	}, nil
+	if field.Tags.Size != nil {
+		return NewGenResult{}, fmt.Errorf(
+			`"size" tag is not applicable for %s`,
+			name,
+		)
+	}
+
+	if field.Tags.Encoding == nil {
+		field.Tags.Encoding = &g.encoding
+	}
+
+	if field.Tags.WordOrder == nil {
+		field.Tags.WordOrder = &g.wordOrder
+	}
+
+	switch typ.Underlying().String() {
+	case "uint8", "int8", "byte":
+		if field.Tags.Byte == nil {
+			return NewGenResult{}, fmt.Errorf(
+				`missing "byte" tag for %s`,
+				name,
+			)
+		}
+		field.Tags.Size = ptrTo(1)
+	case "uint16", "int16":
+		field.Tags.Size = ptrTo(1)
+	case "uint32", "int32":
+		field.Tags.Size = ptrTo(2)
+	case "uint64", "int64":
+		field.Tags.Size = ptrTo(4)
+	default:
+		return NewGenResult{}, fmt.Errorf("unsupported integer type: %s", typ.String())
+	}
+
+	switch typ.Underlying().String() {
+	// case "uint8", "byte":
+	// 	return NewGenResult{
+	// 		Gen: FieldUint8{Field: field},
+	// 		Len: *field.Tags.Offset + *field.Tags.Size,
+	// 	}, nil
+	// case "int8":
+	// 	return NewGenResult{
+	// 		Gen: FieldInt8{Field: field},
+	// 		Len: *field.Tags.Offset + *field.Tags.Size,
+	// 	}, nil
+	case "uint16":
+		return NewGenResult{
+			Gen: FieldUint16{Field: field},
+			Len: *field.Tags.Offset + *field.Tags.Size,
+		}, nil
+	case "int16":
+		test := FieldInt16{Field: field}
+		fmt.Println(test)
+
+		return NewGenResult{
+			Gen: FieldInt16{Field: field},
+			Len: *field.Tags.Offset + *field.Tags.Size,
+		}, nil
+	case "uint32":
+		return NewGenResult{
+			Gen: FieldUint32{Field: field},
+			Len: *field.Tags.Offset + *field.Tags.Size*2,
+		}, nil
+	// case "int32":
+	// 	return NewGenResult{
+	// 		Gen: FieldInt32{Field: field},
+	// 		Len: *field.Tags.Offset + *field.Tags.Size*2,
+	// 	}, nil
+	// case "uint64":
+	// 	return NewGenResult{
+	// 		Gen: FieldUint64{Field: field},
+	// 		Len: *field.Tags.Offset + *field.Tags.Size*4,
+	// 	}, nil
+	// case "int64":
+	// 	return NewGenResult{
+	// 		Gen: FieldInt64{Field: field},
+	// 		Len: *field.Tags.Offset + *field.Tags.Size*4,
+	// 	}, nil
+	default:
+		return NewGenResult{}, fmt.Errorf("unsupported integer type: %s", typ.String())
+	}
+}
+
+type FieldUint8 struct {
+	Field
 }
 
 type FieldUint16 struct {
@@ -38,25 +122,25 @@ func (f FieldUint16) Marshaler() string {
 
 	sb.WriteString(f.Comment())
 
-	switch f.Encoding {
+	switch *f.Tags.Encoding {
 	case BigEndian:
 		if f.IsCustomType {
-			sb.WriteString(fmt.Sprintf("\tbuf[%d] = uint16(m.%s)\n", f.Offset, f.Name))
+			sb.WriteString(fmt.Sprintf("\tbuf[%d] = uint16(m.%s)\n", *f.Tags.Offset, f.Name))
 		} else {
-			sb.WriteString(fmt.Sprintf("\tbuf[%d] = m.%s\n", f.Offset, f.Name))
+			sb.WriteString(fmt.Sprintf("\tbuf[%d] = m.%s\n", *f.Tags.Offset, f.Name))
 		}
 	case LittleEndian:
 		if f.IsCustomType {
 			sb.WriteString(
 				fmt.Sprintf(
 					"\tbuf[%d] = uint16(m.%s>>8) | uint16(m.%s<<8)\n",
-					f.Offset,
+					*f.Tags.Offset,
 					f.Name,
 					f.Name,
 				),
 			)
 		} else {
-			sb.WriteString(fmt.Sprintf("\tbuf[%d] = m.%s>>8 | m.%s<<8\n", f.Offset, f.Name, f.Name))
+			sb.WriteString(fmt.Sprintf("\tbuf[%d] = m.%s>>8 | m.%s<<8\n", *f.Tags.Offset, f.Name, f.Name))
 		}
 	}
 
@@ -68,12 +152,14 @@ func (f FieldUint16) Unmarshaler() string {
 
 	sb.WriteString(f.Comment())
 
-	switch f.Encoding {
+	switch *f.Tags.Encoding {
 	case BigEndian:
 		if f.IsCustomType {
-			sb.WriteString(fmt.Sprintf("\tm.%s = %s(buf[%d])\n", f.Name, f.CustomType, f.Offset))
+			sb.WriteString(
+				fmt.Sprintf("\tm.%s = %s(buf[%d])\n", f.Name, f.CustomType, *f.Tags.Offset),
+			)
 		} else {
-			sb.WriteString(fmt.Sprintf("\tm.%s = buf[%d]\n", f.Name, f.Offset))
+			sb.WriteString(fmt.Sprintf("\tm.%s = buf[%d]\n", f.Name, *f.Tags.Offset))
 		}
 	case LittleEndian:
 		if f.IsCustomType {
@@ -82,12 +168,12 @@ func (f FieldUint16) Unmarshaler() string {
 					"\tm.%s = %s(buf[%d]>>8 | buf[%d]<<8)\n",
 					f.Name,
 					f.CustomType,
-					f.Offset,
-					f.Offset,
+					*f.Tags.Offset,
+					*f.Tags.Offset,
 				),
 			)
 		} else {
-			sb.WriteString(fmt.Sprintf("\tm.%s = buf[%d]>>8 | buf[%d]<<8\n", f.Name, f.Offset, f.Offset))
+			sb.WriteString(fmt.Sprintf("\tm.%s = buf[%d]>>8 | buf[%d]<<8\n", f.Name, *f.Tags.Offset, *f.Tags.Offset))
 		}
 	}
 
@@ -103,14 +189,14 @@ func (f FieldInt16) Marshaler() string {
 
 	sb.WriteString(f.Comment())
 
-	switch f.Encoding {
+	switch *f.Tags.Encoding {
 	case BigEndian:
-		sb.WriteString(fmt.Sprintf("\tbuf[%d] = uint16(m.%s)\n", f.Offset, f.Name))
+		sb.WriteString(fmt.Sprintf("\tbuf[%d] = uint16(m.%s)\n", *f.Tags.Offset, f.Name))
 	case LittleEndian:
 		sb.WriteString(
 			fmt.Sprintf(
 				"\tbuf[%d] = uint16(m.%s)>>8 | uint16(m.%s)<<8\n",
-				f.Offset,
+				*f.Tags.Offset,
 				f.Name,
 				f.Name,
 			),
@@ -125,14 +211,14 @@ func (f FieldInt16) Unmarshaler() string {
 
 	sb.WriteString(f.Comment())
 
-	switch f.Encoding {
+	switch *f.Tags.Encoding {
 	case BigEndian:
 		if f.IsCustomType {
 			sb.WriteString(
-				fmt.Sprintf("\tm.%s = %s(int16(buf[%d]))\n", f.Name, f.CustomType, f.Offset),
+				fmt.Sprintf("\tm.%s = %s(int16(buf[%d]))\n", f.Name, f.CustomType, *f.Tags.Offset),
 			)
 		} else {
-			sb.WriteString(fmt.Sprintf("\tm.%s = int16(buf[%d])\n", f.Name, f.Offset))
+			sb.WriteString(fmt.Sprintf("\tm.%s = int16(buf[%d])\n", f.Name, *f.Tags.Offset))
 		}
 	case LittleEndian:
 		if f.IsCustomType {
@@ -141,12 +227,12 @@ func (f FieldInt16) Unmarshaler() string {
 					"\tm.%s = %s(int16(buf[%d]>>8 | buf[%d]<<8))\n",
 					f.Name,
 					f.CustomType,
-					f.Offset,
-					f.Offset,
+					*f.Tags.Offset,
+					*f.Tags.Offset,
 				),
 			)
 		} else {
-			sb.WriteString(fmt.Sprintf("\tm.%s = int16(buf[%d]>>8 | buf[%d]<<8)\n", f.Name, f.Offset, f.Offset))
+			sb.WriteString(fmt.Sprintf("\tm.%s = int16(buf[%d]>>8 | buf[%d]<<8)\n", f.Name, *f.Tags.Offset, *f.Tags.Offset))
 		}
 	}
 
@@ -162,15 +248,15 @@ func (f FieldUint32) Marshaler() string {
 
 	sb.WriteString(f.Comment())
 
-	switch f.Encoding {
+	switch *f.Tags.Encoding {
 	case BigEndian:
-		sb.WriteString(fmt.Sprintf("\tbuf[%d] = uint16(m.%s)\n", f.Offset, f.Name))
-		sb.WriteString(fmt.Sprintf("\tbuf[%d] = uint16(m.%s>>16)\n", f.Offset+1, f.Name))
+		sb.WriteString(fmt.Sprintf("\tbuf[%d] = uint16(m.%s)\n", *f.Tags.Offset, f.Name))
+		sb.WriteString(fmt.Sprintf("\tbuf[%d] = uint16(m.%s>>16)\n", *f.Tags.Offset+1, f.Name))
 	case LittleEndian:
 		sb.WriteString(
 			fmt.Sprintf(
 				"\tbuf[%d] = uint16(m.%s>>8) | uint16(m.%s<<8)\n",
-				f.Offset,
+				*f.Tags.Offset,
 				f.Name,
 				f.Name,
 			),
@@ -178,7 +264,7 @@ func (f FieldUint32) Marshaler() string {
 		sb.WriteString(
 			fmt.Sprintf(
 				"\tbuf[%d] = uint16(m.%s>>24) | uint16(m.%s<<24)\n",
-				f.Offset+1,
+				*f.Tags.Offset+1,
 				f.Name,
 				f.Name,
 			),
@@ -193,7 +279,7 @@ func (f FieldUint32) Unmarshaler() string {
 
 	sb.WriteString(f.Comment())
 
-	switch f.Encoding {
+	switch *f.Tags.Encoding {
 	case BigEndian:
 		if f.IsCustomType {
 			sb.WriteString(
@@ -201,13 +287,15 @@ func (f FieldUint32) Unmarshaler() string {
 					"\tm.%s = %s(buf[%d]) | %s(buf[%d]) << 16\n",
 					f.Name,
 					f.CustomType,
-					f.Offset,
+					*f.Tags.Offset,
 					f.CustomType,
-					f.Offset+1,
+					*f.Tags.Offset+1,
 				),
 			)
 		} else {
-			sb.WriteString(fmt.Sprintf("\tm.%s = uint32(buf[%d]) | uint32(buf[%d]) << 16\n", f.Name, f.Offset, f.Offset+1))
+			sb.WriteString(
+				fmt.Sprintf("\tm.%s = uint32(buf[%d]) | uint32(buf[%d]) << 16\n", f.Name, *f.Tags.Offset, *f.Tags.Offset+1),
+			)
 		}
 	case LittleEndian:
 		if f.IsCustomType {
@@ -216,21 +304,21 @@ func (f FieldUint32) Unmarshaler() string {
 					"\tm.%s = %s(buf[%d]>>8 | buf[%d]<<8) | %s(buf[%d]>>8 | buf[%d]<<8)<<16\n",
 					f.Name,
 					f.CustomType,
-					f.Offset,
-					f.Offset,
+					*f.Tags.Offset,
+					*f.Tags.Offset,
 					f.CustomType,
-					f.Offset+1,
-					f.Offset+1,
+					*f.Tags.Offset+1,
+					*f.Tags.Offset+1,
 				),
 			)
 		} else {
 			sb.WriteString(
 				fmt.Sprintf("\tm.%s = uint32(buf[%d]>>8 | buf[%d]<<8) | uint32(buf[%d]>>8 | buf[%d]<<8)<<16\n",
 					f.Name,
-					f.Offset,
-					f.Offset,
-					f.Offset+1,
-					f.Offset+1,
+					*f.Tags.Offset,
+					*f.Tags.Offset,
+					*f.Tags.Offset+1,
+					*f.Tags.Offset+1,
 				),
 			)
 		}
