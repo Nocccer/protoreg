@@ -29,6 +29,18 @@ func (g *ProtoRegGen) newStringGen(name string, typ types.Type, tags Tags) (NewG
 		return NewGenResult{}, fmt.Errorf(`missing "char" tag for %s`, name)
 	}
 
+	if field.Tags.CharEncoding == nil {
+		field.Tags.CharEncoding = ptrTo(CharEncodingASCII)
+	}
+
+	if *field.Tags.Char == Char8 && *field.Tags.CharEncoding == CharEncodingUTF8 {
+		return NewGenResult{}, fmt.Errorf(
+			`you can't set "charencoding" to %q if "char" is %q, because utf8 needs atleast two bytes for each character.`,
+			CharEncodingUTF8,
+			Char8,
+		)
+	}
+
 	if field.Tags.Encoding == nil {
 		field.Tags.Encoding = &g.encoding
 	}
@@ -79,20 +91,46 @@ func (f FieldString) Marshaler() string {
 		}
 		sb.WriteString("\t}\n")
 	case Char16:
-		sb.WriteString(fmt.Sprintf("\tfor i := 0; i < len(m.%s); i++ {\n", f.Name))
-		sb.WriteString(fmt.Sprintf("\t\tif i >= %d {break}\n", *f.Tags.Size))
-		shift := ""
-		if *f.Tags.Encoding == LittleEndian {
-			shift = "<<8"
+		if *f.Tags.CharEncoding == CharEncodingASCII {
+			sb.WriteString(fmt.Sprintf("\tfor i := 0; i < len(m.%s); i++ {\n", f.Name))
+			sb.WriteString(fmt.Sprintf("\t\tif i >= %d {break}\n", *f.Tags.Size))
+			shift := ""
+			if *f.Tags.Encoding == LittleEndian {
+				shift = "<<8"
+			}
+
+			sb.WriteString(
+				fmt.Sprintf(
+					"\t\tbuf[%d+i] = uint16(m.%s[i])%s\n",
+					*f.Tags.Offset,
+					f.Name,
+					shift,
+				),
+			)
+		} else {
+			sb.WriteString("\ti = 0\n")
+			sb.WriteString(fmt.Sprintf("\tfor _, r := range m.%s {\n", f.Name))
+			sb.WriteString(fmt.Sprintf("\t\tif i >= %d {break}\n", *f.Tags.Size))
+
+			if *f.Tags.Encoding == LittleEndian {
+				sb.WriteString(
+					fmt.Sprintf(
+						"\t\tbuf[%d+i] = uint16(r>>8) | uint16(r<<8)\n",
+						*f.Tags.Offset,
+					),
+				)
+			} else {
+				sb.WriteString(
+					fmt.Sprintf(
+						"\t\tbuf[%d+i] = uint16(r)\n",
+						*f.Tags.Offset,
+					),
+				)
+			}
+
+			sb.WriteString("\t\ti++\n")
 		}
-		sb.WriteString(
-			fmt.Sprintf(
-				"\t\tbuf[%d+i] = uint16(m.%s[i])%s\n",
-				*f.Tags.Offset,
-				f.Name,
-				shift,
-			),
-		)
+
 		sb.WriteString("\t}\n")
 	}
 
@@ -131,22 +169,41 @@ func (f FieldString) Unmarshaler() string {
 		sb.WriteString("\t}\n")
 		sb.WriteString(fmt.Sprintf("\tm.%s = string(bytes)\n", f.Name))
 	case Char16:
-		sb.WriteString(fmt.Sprintf("\tbytes = make([]byte, %d)\n", *f.Tags.Size))
-		sb.WriteString(
-			fmt.Sprintf(
-				"\tfor i, v := range buf[%d:%d] {\n",
-				*f.Tags.Offset,
-				*f.Tags.Offset+*f.Tags.Size,
-			),
-		)
-		sb.WriteString("\t\tif v == 0 {bytes = bytes[:i];break} // stop on empty char\n")
-		shift := ""
-		if *f.Tags.Encoding == LittleEndian {
-			shift = ">>8"
+		if *f.Tags.CharEncoding == CharEncodingASCII {
+			sb.WriteString(fmt.Sprintf("\tbytes = make([]byte, %d)\n", *f.Tags.Size))
+			sb.WriteString(
+				fmt.Sprintf(
+					"\tfor i, v := range buf[%d:%d] {\n",
+					*f.Tags.Offset,
+					*f.Tags.Offset+*f.Tags.Size,
+				),
+			)
+			sb.WriteString("\t\tif v == 0 {bytes = bytes[:i];break} // stop on empty char\n")
+			shift := ""
+			if *f.Tags.Encoding == LittleEndian {
+				shift = ">>8"
+			}
+			sb.WriteString(fmt.Sprintf("\t\tbytes[i] = byte(v%s)\n", shift))
+			sb.WriteString("\t}\n")
+			sb.WriteString(fmt.Sprintf("\tm.%s = string(bytes)\n", f.Name))
+		} else {
+			sb.WriteString(fmt.Sprintf("\trunes = make([]rune, %d)\n", *f.Tags.Size))
+			sb.WriteString(
+				fmt.Sprintf(
+					"\tfor i, v := range buf[%d:%d] {\n",
+					*f.Tags.Offset,
+					*f.Tags.Offset+*f.Tags.Size,
+				),
+			)
+			sb.WriteString("\t\tif v == 0 {runes = runes[:i];break} // stop on empty char\n")
+			if *f.Tags.Encoding == LittleEndian {
+				sb.WriteString("\t\trunes[i] = rune(v>>8) | rune(v<<8)\n")
+			} else {
+				sb.WriteString("\t\trunes[i] = rune(v)\n")
+			}
+			sb.WriteString("\t}\n")
+			sb.WriteString(fmt.Sprintf("\tm.%s = string(runes)\n", f.Name))
 		}
-		sb.WriteString(fmt.Sprintf("\t\tbytes[i] = byte(v%s)\n", shift))
-		sb.WriteString("\t}\n")
-		sb.WriteString(fmt.Sprintf("\tm.%s = string(bytes)\n", f.Name))
 	}
 
 	return sb.String()

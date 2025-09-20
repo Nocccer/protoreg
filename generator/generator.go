@@ -225,9 +225,17 @@ func (g *ProtoRegGen) genFromStruct(
 		sb.WriteString(fmt.Sprintf("func (m %s) Marshal() ([]uint16, error) {\n", name))
 		sb.WriteString(fmt.Sprintf("\tbuf := make([]uint16, %d)\n", length))
 
+		var sbFields strings.Builder
 		for _, gen := range gens {
-			sb.WriteString(gen.Marshaler())
+			sbFields.WriteString(gen.Marshaler())
 		}
+
+		// Check if we need to declare i variable
+		if strings.Contains(sbFields.String(), "i =") {
+			sb.WriteString("\tvar i int\n")
+		}
+
+		sb.WriteString(sbFields.String())
 
 		sb.WriteString("\n\treturn buf, nil\n")
 		sb.WriteString("}\n\n")
@@ -246,6 +254,11 @@ func (g *ProtoRegGen) genFromStruct(
 		// Check if we need to declare the bytes slice
 		if strings.Contains(sbFields.String(), "bytes =") {
 			sb.WriteString("\tvar bytes []byte\n")
+		}
+
+		// Check if we need to declare the runes slice
+		if strings.Contains(sbFields.String(), "runes =") {
+			sb.WriteString("\tvar runes []rune\n")
 		}
 
 		sb.WriteString(sbFields.String())

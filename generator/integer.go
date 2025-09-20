@@ -61,25 +61,22 @@ func (g *ProtoRegGen) newIntegerGen(name string, typ types.Type, tags Tags) (New
 	}
 
 	switch typ.Underlying().String() {
-	// case "uint8", "byte":
-	// 	return NewGenResult{
-	// 		Gen: FieldUint8{Field: field},
-	// 		Len: *field.Tags.Offset + *field.Tags.Size,
-	// 	}, nil
-	// case "int8":
-	// 	return NewGenResult{
-	// 		Gen: FieldInt8{Field: field},
-	// 		Len: *field.Tags.Offset + *field.Tags.Size,
-	// 	}, nil
+	case "uint8", "byte":
+		return NewGenResult{
+			Gen: FieldUint8{Field: field},
+			Len: *field.Tags.Offset + *field.Tags.Size,
+		}, nil
+	case "int8":
+		return NewGenResult{
+			Gen: FieldInt8{Field: field},
+			Len: *field.Tags.Offset + *field.Tags.Size,
+		}, nil
 	case "uint16":
 		return NewGenResult{
 			Gen: FieldUint16{Field: field},
 			Len: *field.Tags.Offset + *field.Tags.Size,
 		}, nil
 	case "int16":
-		test := FieldInt16{Field: field}
-		fmt.Println(test)
-
 		return NewGenResult{
 			Gen: FieldInt16{Field: field},
 			Len: *field.Tags.Offset + *field.Tags.Size,
@@ -111,6 +108,106 @@ func (g *ProtoRegGen) newIntegerGen(name string, typ types.Type, tags Tags) (New
 
 type FieldUint8 struct {
 	Field
+}
+
+func (f FieldUint8) Marshaler() string {
+	var sb strings.Builder
+
+	sb.WriteString(f.Comment())
+
+	shift := ""
+	if (*f.Tags.Encoding == BigEndian && *f.Tags.Byte == High) ||
+		(*f.Tags.Encoding == LittleEndian && *f.Tags.Byte == Low) {
+		shift = "<<8"
+	}
+
+	sb.WriteString(
+		fmt.Sprintf(
+			"\tbuf[%d] = buf[%d] | uint16(m.%s)%s\n",
+			*f.Tags.Offset,
+			*f.Tags.Offset,
+			f.Name,
+			shift,
+		),
+	)
+
+	return sb.String()
+}
+
+func (f FieldUint8) Unmarshaler() string {
+	var sb strings.Builder
+
+	sb.WriteString(f.Comment())
+
+	shift := ""
+	if (*f.Tags.Encoding == BigEndian && *f.Tags.Byte == High) ||
+		(*f.Tags.Encoding == LittleEndian && *f.Tags.Byte == Low) {
+		shift = ">>8"
+	}
+
+	if f.IsCustomType {
+		sb.WriteString(
+			fmt.Sprintf("\tm.%s = %s(buf[%d]%s)\n", f.Name, f.CustomType, *f.Tags.Offset, shift),
+		)
+	} else {
+		sb.WriteString(
+			fmt.Sprintf("\tm.%s = uint8(buf[%d]%s)\n", f.Name, *f.Tags.Offset, shift),
+		)
+	}
+
+	return sb.String()
+}
+
+type FieldInt8 struct {
+	Field
+}
+
+func (f FieldInt8) Marshaler() string {
+	var sb strings.Builder
+
+	sb.WriteString(f.Comment())
+
+	shift := ""
+	if (*f.Tags.Encoding == BigEndian && *f.Tags.Byte == High) ||
+		(*f.Tags.Encoding == LittleEndian && *f.Tags.Byte == Low) {
+		shift = "<<8"
+	}
+
+	sb.WriteString(
+		fmt.Sprintf(
+			"\tbuf[%d] = buf[%d] | uint16(uint8(m.%s))%s\n",
+			*f.Tags.Offset,
+			*f.Tags.Offset,
+			f.Name,
+			shift,
+		),
+	)
+
+	return sb.String()
+}
+
+func (f FieldInt8) Unmarshaler() string {
+	var sb strings.Builder
+
+	sb.WriteString(f.Comment())
+
+	shift := ""
+	if (*f.Tags.Encoding == BigEndian && *f.Tags.Byte == High) ||
+		(*f.Tags.Encoding == LittleEndian && *f.Tags.Byte == Low) {
+		shift = ">>8"
+	}
+
+	if f.IsCustomType {
+		sb.WriteString(
+			fmt.Sprintf("\tm.%s = %s(buf[%d]%s)\n", f.Name, f.CustomType, *f.Tags.Offset, shift),
+		)
+	} else {
+		sb.WriteString(
+			fmt.Sprintf("\tm.%s = int8(buf[%d]%s)\n", f.Name, *f.Tags.Offset, shift),
+		)
+	}
+
+	return sb.String()
 }
 
 type FieldUint16 struct {

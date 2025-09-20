@@ -19,14 +19,21 @@ type BigEndianHighWordTestSuite struct {
 
 func (s *BigEndianHighWordTestSuite) SetupTest() {
 	s.BigEndianHighWord = tests.BigEndianHighWord{
-		Ignored:      0x4321,
-		Uint16:       0x1234,
-		Int16:        -42,
-		Uint32:       0x12345678,
-		String8:      "TestData",
-		String16:     "Überlauf",
-		CustomUint16: tests.CustomUint16(123),
-		CustomInt16:  sub.CustomInt16(-789),
+		Ignored:       0x4321,
+		Uint8High:     0x11,
+		Uint8Low:      0x22,
+		ByteHigh:      0x33,
+		ByteLow:       0x44,
+		Int8Low:       -50,
+		Int8High:      -100,
+		Uint16:        0x1234,
+		Int16:         -42,
+		Uint32:        0x12345678,
+		StringASCII8:  "TestDat1",
+		StringASCII16: "TestDat2",
+		StringUTF816:  "TestDät3", // add utf8 char
+		CustomUint16:  tests.CustomUint16(123),
+		CustomInt16:   sub.CustomInt16(-789),
 	}
 }
 
@@ -47,14 +54,21 @@ func (s *BigEndianHighWordTestSuite) TestMarshalUnmarshal() {
 
 func BenchmarkBigEndianHighWordMarshal(b *testing.B) {
 	test := &tests.BigEndianHighWord{
-		Ignored:      0x4321,
-		Uint16:       0x1234,
-		Int16:        -42,
-		Uint32:       0x12345678,
-		String8:      "TestData",
-		String16:     "テストデータ",
-		CustomUint16: tests.CustomUint16(123),
-		CustomInt16:  sub.CustomInt16(-789),
+		Ignored:       0x4321,
+		Uint8High:     0x11,
+		Uint8Low:      0x22,
+		ByteHigh:      0x33,
+		ByteLow:       0x44,
+		Int8Low:       -50,
+		Int8High:      -100,
+		Uint16:        0x1234,
+		Int16:         -42,
+		Uint32:        0x12345678,
+		StringASCII8:  "TestDat1",
+		StringASCII16: "TestDat2",
+		StringUTF816:  "TestDät3", // add utf8 char
+		CustomUint16:  tests.CustomUint16(123),
+		CustomInt16:   sub.CustomInt16(-789),
 	}
 
 	for b.Loop() {
@@ -67,14 +81,21 @@ func BenchmarkBigEndianHighWordMarshal(b *testing.B) {
 
 func BenchmarkBigEndianHighWordUnmarshal(b *testing.B) {
 	test := &tests.BigEndianHighWord{
-		Ignored:      0x4321,
-		Uint16:       0x1234,
-		Int16:        -42,
-		Uint32:       0x12345678,
-		String8:      "TestData",
-		String16:     "テストデータ",
-		CustomUint16: tests.CustomUint16(123),
-		CustomInt16:  sub.CustomInt16(-789),
+		Ignored:       0x4321,
+		Uint8High:     0x11,
+		Uint8Low:      0x22,
+		ByteHigh:      0x33,
+		ByteLow:       0x44,
+		Int8Low:       -50,
+		Int8High:      -100,
+		Uint16:        0x1234,
+		Int16:         -42,
+		Uint32:        0x12345678,
+		StringASCII8:  "TestDat1",
+		StringASCII16: "TestDat2",
+		StringUTF816:  "TestDät3", // add utf8 char
+		CustomUint16:  tests.CustomUint16(123),
+		CustomInt16:   sub.CustomInt16(-789),
 	}
 
 	reg, err := test.Marshal()

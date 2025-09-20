@@ -6,45 +6,78 @@ import (
 )
 
 func (m BigEndianHighWord) Marshal() ([]uint16, error) {
-	buf := make([]uint16, 39)
+	buf := make([]uint16, 47)
+	var i int
+	// Uint8Low
+	buf[0] = buf[0] | uint16(m.Uint8Low)
+	// Uint8High
+	buf[0] = buf[0] | uint16(m.Uint8High)<<8
+	// ByteLow
+	buf[1] = buf[1] | uint16(m.ByteLow)
+	// ByteHigh
+	buf[1] = buf[1] | uint16(m.ByteHigh)<<8
+	// Int8Low
+	buf[2] = buf[2] | uint16(uint8(m.Int8Low))
+	// Int8High
+	buf[2] = buf[2] | uint16(uint8(m.Int8High))<<8
 	// Uint16
-	buf[1] = m.Uint16
+	buf[3] = m.Uint16
 	// Int16
-	buf[2] = uint16(m.Int16)
+	buf[4] = uint16(m.Int16)
 	// Uint32
-	buf[3] = uint16(m.Uint32)
-	buf[4] = uint16(m.Uint32>>16)
-	// String8
-	length := len(m.String8)
+	buf[5] = uint16(m.Uint32)
+	buf[6] = uint16(m.Uint32>>16)
+	// StringASCII8
+	length := len(m.StringASCII8)
 	if length % 2 != 0 { length += 1 }
 	bytes := make([]byte, length)
-	copy(bytes, m.String8)
+	copy(bytes, m.StringASCII8)
 	for i := 0; i < length; i+=2 {
 		if i >= 16 {break}
 		buf[21+i/2] = uint16(bytes[i]) | uint16(bytes[i+1])<<8
 	}
-	// String16
-	for i := 0; i < len(m.String16); i++ {
+	// StringASCII16
+	for i := 0; i < len(m.StringASCII16); i++ {
 		if i >= 8 {break}
-		buf[29+i] = uint16(m.String16[i])
+		buf[29+i] = uint16(m.StringASCII16[i])
+	}
+	// StringUTF816
+	i = 0
+	for _, r := range m.StringUTF816 {
+		if i >= 8 {break}
+		buf[37+i] = uint16(r)
+		i++
 	}
 	// CustomUint16
-	buf[37] = uint16(m.CustomUint16)
+	buf[45] = uint16(m.CustomUint16)
 	// CustomInt16
-	buf[38] = uint16(m.CustomInt16)
+	buf[46] = uint16(m.CustomInt16)
 
 	return buf, nil
 }
 
 func (m *BigEndianHighWord) Unmarshal(buf []uint16) error {
 	var bytes []byte
+	var runes []rune
+	// Uint8Low
+	m.Uint8Low = uint8(buf[0])
+	// Uint8High
+	m.Uint8High = uint8(buf[0]>>8)
+	// ByteLow
+	m.ByteLow = uint8(buf[1])
+	// ByteHigh
+	m.ByteHigh = uint8(buf[1]>>8)
+	// Int8Low
+	m.Int8Low = int8(buf[2])
+	// Int8High
+	m.Int8High = int8(buf[2]>>8)
 	// Uint16
-	m.Uint16 = buf[1]
+	m.Uint16 = buf[3]
 	// Int16
-	m.Int16 = int16(buf[2])
+	m.Int16 = int16(buf[4])
 	// Uint32
-	m.Uint32 = uint32(buf[3]) | uint32(buf[4]) << 16
-	// String8
+	m.Uint32 = uint32(buf[5]) | uint32(buf[6]) << 16
+	// StringASCII8
 	bytes = make([]byte, 8)
 	for i, v := range buf[21:29] {
 		low := byte(v)
@@ -54,18 +87,25 @@ func (m *BigEndianHighWord) Unmarshal(buf []uint16) error {
 		if high == 0 {bytes = bytes[:i*2+1];break} // stop on empty char
 		bytes[i*2+1] = high
 	}
-	m.String8 = string(bytes)
-	// String16
+	m.StringASCII8 = string(bytes)
+	// StringASCII16
 	bytes = make([]byte, 8)
 	for i, v := range buf[29:37] {
 		if v == 0 {bytes = bytes[:i];break} // stop on empty char
 		bytes[i] = byte(v)
 	}
-	m.String16 = string(bytes)
+	m.StringASCII16 = string(bytes)
+	// StringUTF816
+	runes = make([]rune, 8)
+	for i, v := range buf[37:45] {
+		if v == 0 {runes = runes[:i];break} // stop on empty char
+		runes[i] = rune(v)
+	}
+	m.StringUTF816 = string(runes)
 	// CustomUint16
-	m.CustomUint16 = CustomUint16(buf[37])
+	m.CustomUint16 = CustomUint16(buf[45])
 	// CustomInt16
-	m.CustomInt16 = sub.CustomInt16(int16(buf[38]))
+	m.CustomInt16 = sub.CustomInt16(int16(buf[46]))
 
 	return nil
 }

@@ -36,6 +36,21 @@ func (c Char) Validate() error {
 	return fmt.Errorf(`invalid "char" value %q`, c)
 }
 
+type CharEncoding string
+
+const (
+	CharEncodingASCII CharEncoding = "ascii" // default
+	CharEncodingUTF8  CharEncoding = "utf8"
+)
+
+func (c CharEncoding) Validate() error {
+	switch c {
+	case CharEncodingASCII, CharEncodingUTF8:
+		return nil
+	}
+	return fmt.Errorf(`invalid "charencoding" value %q`, c)
+}
+
 type Encoding string
 
 const (
@@ -67,13 +82,14 @@ func (w WordOrder) Validate() error {
 }
 
 type Tags struct {
-	Encoding  *Encoding
-	WordOrder *WordOrder
-	Offset    *int
-	Size      *int
-	Char      *Char
-	Byte      *Byte
-	Bit       *int
+	Encoding     *Encoding
+	WordOrder    *WordOrder
+	Offset       *int
+	Size         *int
+	Char         *Char
+	CharEncoding *CharEncoding
+	Byte         *Byte
+	Bit          *int
 }
 
 func extractTags(tagStr string) (Tags, error) {
@@ -113,6 +129,11 @@ func extractTags(tagStr string) (Tags, error) {
 		case "char":
 			t.Char = ptrTo(Char(kv[1]))
 			if err := t.Char.Validate(); err != nil {
+				return Tags{}, err
+			}
+		case "charencoding":
+			t.CharEncoding = ptrTo(CharEncoding(kv[1]))
+			if err := t.CharEncoding.Validate(); err != nil {
 				return Tags{}, err
 			}
 		case "byte":
