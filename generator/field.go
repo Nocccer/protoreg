@@ -45,6 +45,8 @@ func (g *ProtoRegGen) extractField(
 	if strings.Contains(t.Type.Underlying().String(), "int") ||
 		strings.Contains(t.Type.Underlying().String(), "byte") {
 		return g.newIntegerGen(name, t.Type, tag)
+	} else if strings.Contains(t.Type.Underlying().String(), "float") {
+		return g.newFloatGen(name, t.Type, tag)
 	} else if t.Type.Underlying().String() == "string" {
 		return g.newStringGen(name, t.Type, tag)
 	}

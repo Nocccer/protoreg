@@ -105,6 +105,7 @@ func (g *ProtoRegGen) Imports() string {
 
 	sb.WriteString("import (\n")
 	g.imports = slices.Compact(g.imports)
+
 	slices.Sort(g.imports)
 	for _, imp := range g.imports {
 		sb.WriteString(fmt.Sprintf("\t\"%s\"\n", imp))
@@ -235,6 +236,16 @@ func (g *ProtoRegGen) genFromStruct(
 			sb.WriteString("\tvar i int\n")
 		}
 
+		// Check if we need to declare tmp32 variable
+		if strings.Contains(sbFields.String(), "tmp32 = ") {
+			sb.WriteString("\tvar tmp32 uint32\n")
+		}
+
+		// Check if we need to declare tmp64 variable
+		if strings.Contains(sbFields.String(), "tmp64 = ") {
+			sb.WriteString("\tvar tmp64 uint64\n")
+		}
+
 		sb.WriteString(sbFields.String())
 
 		sb.WriteString("\n\treturn buf, nil\n")
@@ -259,6 +270,16 @@ func (g *ProtoRegGen) genFromStruct(
 		// Check if we need to declare the runes slice
 		if strings.Contains(sbFields.String(), "runes =") {
 			sb.WriteString("\tvar runes []rune\n")
+		}
+
+		// Check if we need to declare tmp32 variable
+		if strings.Contains(sbFields.String(), "tmp32 = ") {
+			sb.WriteString("\tvar tmp32 uint32\n")
+		}
+
+		// Check if we need to declare tmp64 variable
+		if strings.Contains(sbFields.String(), "tmp64 = ") {
+			sb.WriteString("\tvar tmp64 uint64\n")
 		}
 
 		sb.WriteString(sbFields.String())

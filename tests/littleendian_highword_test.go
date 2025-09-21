@@ -19,14 +19,26 @@ type LittleEndianHighWordTestSuite struct {
 
 func (s *LittleEndianHighWordTestSuite) SetupTest() {
 	s.LittleEndianHighWord = tests.LittleEndianHighWord{
-		Ignored: 0,
-		Field1:  "TestDat",
-		Field2:  -42,
-		Field3:  tests.CustomUint16(123),
-		Field4:  456,
-		Field5:  "ASCII",
-		Field6:  sub.CustomInt16(-789),
-		Field7:  12345,
+		Ignored:       0x4321,
+		Uint8High:     0x11,
+		Uint8Low:      0x22,
+		ByteHigh:      0x33,
+		ByteLow:       0x44,
+		Int8Low:       -50,
+		Int8High:      -100,
+		Uint16:        0x1234,
+		Int16:         -42,
+		Uint32:        0x12345678,
+		Int32:         -111222,
+		Uint64:        0x1234123412341234,
+		Int64:         -1111222233334444,
+		Float32:       1234.5678,
+		Float64:       -1234.5678,
+		StringASCII8:  "TestDat1",
+		StringASCII16: "TestDat2",
+		StringUTF816:  "TestDät3", // add utf8 char
+		CustomUint16:  tests.CustomUint16(123),
+		CustomInt16:   sub.CustomInt16(-789),
 	}
 }
 
@@ -38,19 +50,35 @@ func (s *LittleEndianHighWordTestSuite) TestMarshalUnmarshal() {
 	err = out.Unmarshal(reg)
 	s.Require().NoError(err)
 
+	s.Empty(out.Ignored)
+
+	out.Ignored = s.LittleEndianHighWord.Ignored // Ignored field is not set by Unmarshal, set it manually for comparison
+
 	s.Equal(s.LittleEndianHighWord, *out)
 }
 
 func BenchmarkLittleEndianHighWordMarshal(b *testing.B) {
 	test := &tests.LittleEndianHighWord{
-		Ignored: 0,
-		Field1:  "Test Data",
-		Field2:  -42,
-		Field3:  tests.CustomUint16(123),
-		Field4:  456,
-		Field5:  "ASCII",
-		Field6:  sub.CustomInt16(-789),
-		Field7:  12345,
+		Ignored:       0x4321,
+		Uint8High:     0x11,
+		Uint8Low:      0x22,
+		ByteHigh:      0x33,
+		ByteLow:       0x44,
+		Int8Low:       -50,
+		Int8High:      -100,
+		Uint16:        0x1234,
+		Int16:         -42,
+		Uint32:        0x12345678,
+		Int32:         -111222,
+		Uint64:        0x1234123412341234,
+		Int64:         -1111222233334444,
+		Float32:       1234.5678,
+		Float64:       -1234.5678,
+		StringASCII8:  "TestDat1",
+		StringASCII16: "TestDat2",
+		StringUTF816:  "TestDät3", // add utf8 char
+		CustomUint16:  tests.CustomUint16(123),
+		CustomInt16:   sub.CustomInt16(-789),
 	}
 
 	for b.Loop() {
@@ -63,14 +91,26 @@ func BenchmarkLittleEndianHighWordMarshal(b *testing.B) {
 
 func BenchmarkLittleEndianHighWordUnmarshal(b *testing.B) {
 	test := &tests.LittleEndianHighWord{
-		Ignored: 0,
-		Field1:  "Test Data",
-		Field2:  -42,
-		Field3:  tests.CustomUint16(123),
-		Field4:  456,
-		Field5:  "ASCII",
-		Field6:  sub.CustomInt16(-789),
-		Field7:  12345,
+		Ignored:       0x4321,
+		Uint8High:     0x11,
+		Uint8Low:      0x22,
+		ByteHigh:      0x33,
+		ByteLow:       0x44,
+		Int8Low:       -50,
+		Int8High:      -100,
+		Uint16:        0x1234,
+		Int16:         -42,
+		Uint32:        0x12345678,
+		Int32:         -111222,
+		Uint64:        0x1234123412341234,
+		Int64:         -1111222233334444,
+		Float32:       1234.5678,
+		Float64:       -1234.5678,
+		StringASCII8:  "TestDat1",
+		StringASCII16: "TestDat2",
+		StringUTF816:  "TestDät3", // add utf8 char
+		CustomUint16:  tests.CustomUint16(123),
+		CustomInt16:   sub.CustomInt16(-789),
 	}
 
 	reg, err := test.Marshal()

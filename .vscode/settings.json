@@ -5,6 +5,7 @@
   "go.alternateTools": {
     "customFormatter": "golangci-lint"
   },
+  "editor.formatOnSave": true,
   "go.formatFlags": ["fmt", "--stdin"],
   "editor.tabSize": 2
 }

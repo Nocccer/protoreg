@@ -6,11 +6,6 @@ import (
 	"strings"
 )
 
-type NewGenResult struct {
-	Gen Generator
-	Len int
-}
-
 func (g *ProtoRegGen) newIntegerGen(name string, typ types.Type, tags Tags) (NewGenResult, error) {
 	field := Field{
 		Name:         name,
@@ -86,21 +81,21 @@ func (g *ProtoRegGen) newIntegerGen(name string, typ types.Type, tags Tags) (New
 			Gen: FieldUint32{Field: field},
 			Len: *field.Tags.Offset + *field.Tags.Size*2,
 		}, nil
-	// case "int32":
-	// 	return NewGenResult{
-	// 		Gen: FieldInt32{Field: field},
-	// 		Len: *field.Tags.Offset + *field.Tags.Size*2,
-	// 	}, nil
-	// case "uint64":
-	// 	return NewGenResult{
-	// 		Gen: FieldUint64{Field: field},
-	// 		Len: *field.Tags.Offset + *field.Tags.Size*4,
-	// 	}, nil
-	// case "int64":
-	// 	return NewGenResult{
-	// 		Gen: FieldInt64{Field: field},
-	// 		Len: *field.Tags.Offset + *field.Tags.Size*4,
-	// 	}, nil
+	case "int32":
+		return NewGenResult{
+			Gen: FieldInt32{Field: field},
+			Len: *field.Tags.Offset + *field.Tags.Size*2,
+		}, nil
+	case "uint64":
+		return NewGenResult{
+			Gen: FieldUint64{Field: field},
+			Len: *field.Tags.Offset + *field.Tags.Size*4,
+		}, nil
+	case "int64":
+		return NewGenResult{
+			Gen: FieldInt64{Field: field},
+			Len: *field.Tags.Offset + *field.Tags.Size*4,
+		}, nil
 	default:
 		return NewGenResult{}, fmt.Errorf("unsupported integer type: %s", typ.String())
 	}
@@ -416,6 +411,352 @@ func (f FieldUint32) Unmarshaler() string {
 					*f.Tags.Offset,
 					*f.Tags.Offset+1,
 					*f.Tags.Offset+1,
+				),
+			)
+		}
+	}
+
+	return sb.String()
+}
+
+type FieldInt32 struct {
+	Field
+}
+
+func (f FieldInt32) Marshaler() string {
+	var sb strings.Builder
+
+	sb.WriteString(f.Comment())
+
+	switch *f.Tags.Encoding {
+	case BigEndian:
+		sb.WriteString(fmt.Sprintf("\tbuf[%d] = uint16(m.%s)\n", *f.Tags.Offset, f.Name))
+		sb.WriteString(fmt.Sprintf("\tbuf[%d] = uint16(m.%s>>16)\n", *f.Tags.Offset+1, f.Name))
+	case LittleEndian:
+		sb.WriteString(
+			fmt.Sprintf(
+				"\tbuf[%d] = uint16(m.%s>>8) | uint16(m.%s<<8)\n",
+				*f.Tags.Offset,
+				f.Name,
+				f.Name,
+			),
+		)
+		sb.WriteString(
+			fmt.Sprintf(
+				"\tbuf[%d] = uint16(m.%s>>24) | uint16(m.%s<<24)\n",
+				*f.Tags.Offset+1,
+				f.Name,
+				f.Name,
+			),
+		)
+	}
+
+	return sb.String()
+}
+
+func (f FieldInt32) Unmarshaler() string {
+	var sb strings.Builder
+
+	sb.WriteString(f.Comment())
+
+	switch *f.Tags.Encoding {
+	case BigEndian:
+		if f.IsCustomType {
+			sb.WriteString(
+				fmt.Sprintf(
+					"\tm.%s = %s(buf[%d]) | %s(buf[%d]) << 16\n",
+					f.Name,
+					f.CustomType,
+					*f.Tags.Offset,
+					f.CustomType,
+					*f.Tags.Offset+1,
+				),
+			)
+		} else {
+			sb.WriteString(
+				fmt.Sprintf("\tm.%s = int32(buf[%d]) | int32(buf[%d]) << 16\n", f.Name, *f.Tags.Offset, *f.Tags.Offset+1),
+			)
+		}
+	case LittleEndian:
+		if f.IsCustomType {
+			sb.WriteString(
+				fmt.Sprintf(
+					"\tm.%s = %s(buf[%d]>>8 | buf[%d]<<8) | %s(buf[%d]>>8 | buf[%d]<<8)<<16\n",
+					f.Name,
+					f.CustomType,
+					*f.Tags.Offset,
+					*f.Tags.Offset,
+					f.CustomType,
+					*f.Tags.Offset+1,
+					*f.Tags.Offset+1,
+				),
+			)
+		} else {
+			sb.WriteString(
+				fmt.Sprintf("\tm.%s = int32(buf[%d]>>8 | buf[%d]<<8) | int32(buf[%d]>>8 | buf[%d]<<8)<<16\n",
+					f.Name,
+					*f.Tags.Offset,
+					*f.Tags.Offset,
+					*f.Tags.Offset+1,
+					*f.Tags.Offset+1,
+				),
+			)
+		}
+	}
+
+	return sb.String()
+}
+
+type FieldUint64 struct {
+	Field
+}
+
+func (f FieldUint64) Marshaler() string {
+	var sb strings.Builder
+
+	sb.WriteString(f.Comment())
+
+	switch *f.Tags.Encoding {
+	case BigEndian:
+		sb.WriteString(fmt.Sprintf("\tbuf[%d] = uint16(m.%s)\n", *f.Tags.Offset, f.Name))
+		sb.WriteString(fmt.Sprintf("\tbuf[%d] = uint16(m.%s>>16)\n", *f.Tags.Offset+1, f.Name))
+		sb.WriteString(fmt.Sprintf("\tbuf[%d] = uint16(m.%s>>32)\n", *f.Tags.Offset+2, f.Name))
+		sb.WriteString(fmt.Sprintf("\tbuf[%d] = uint16(m.%s>>48)\n", *f.Tags.Offset+3, f.Name))
+	case LittleEndian:
+		sb.WriteString(
+			fmt.Sprintf(
+				"\tbuf[%d] = uint16(m.%s>>8) | uint16(m.%s<<8)\n",
+				*f.Tags.Offset,
+				f.Name,
+				f.Name,
+			),
+		)
+		sb.WriteString(
+			fmt.Sprintf(
+				"\tbuf[%d] = uint16(m.%s>>24) | uint16(m.%s<<24)\n",
+				*f.Tags.Offset+1,
+				f.Name,
+				f.Name,
+			),
+		)
+		sb.WriteString(
+			fmt.Sprintf(
+				"\tbuf[%d] = uint16(m.%s>>40) | uint16(m.%s<<40)\n",
+				*f.Tags.Offset+2,
+				f.Name,
+				f.Name,
+			),
+		)
+		sb.WriteString(
+			fmt.Sprintf(
+				"\tbuf[%d] = uint16(m.%s>>56) | uint16(m.%s<<56)\n",
+				*f.Tags.Offset+3,
+				f.Name,
+				f.Name,
+			),
+		)
+	}
+
+	return sb.String()
+}
+
+func (f FieldUint64) Unmarshaler() string {
+	var sb strings.Builder
+
+	sb.WriteString(f.Comment())
+
+	switch *f.Tags.Encoding {
+	case BigEndian:
+		if f.IsCustomType {
+			sb.WriteString(
+				fmt.Sprintf(
+					"\tm.%s = %s(buf[%d]) | %s(buf[%d]) << 16 | %s(buf[%d]) << 32 | %s(buf[%d]) << 48\n",
+					f.Name,
+					f.CustomType,
+					*f.Tags.Offset,
+					f.CustomType,
+					*f.Tags.Offset+1,
+					f.CustomType,
+					*f.Tags.Offset+2,
+					f.CustomType,
+					*f.Tags.Offset+3,
+				),
+			)
+		} else {
+			sb.WriteString(
+				fmt.Sprintf(
+					"\tm.%s = uint64(buf[%d]) | uint64(buf[%d]) << 16 | uint64(buf[%d]) << 32 | uint64(buf[%d]) << 48\n",
+					f.Name,
+					*f.Tags.Offset,
+					*f.Tags.Offset+1,
+					*f.Tags.Offset+2,
+					*f.Tags.Offset+3,
+				),
+			)
+		}
+	case LittleEndian:
+		if f.IsCustomType {
+			sb.WriteString(
+				//nolint:lll
+				fmt.Sprintf(
+					"\tm.%s = %s(buf[%d]>>8 | buf[%d]<<8) | %s(buf[%d]>>8 | buf[%d]<<8)<<16 | %s(buf[%d]>>8 | buf[%d]<<8)<<32 | %s(buf[%d]>>8 | buf[%d]<<8)<<48\n",
+					f.Name,
+					f.CustomType,
+					*f.Tags.Offset,
+					*f.Tags.Offset,
+					f.CustomType,
+					*f.Tags.Offset+1,
+					*f.Tags.Offset+1,
+					f.CustomType,
+					*f.Tags.Offset+2,
+					*f.Tags.Offset+2,
+					f.CustomType,
+					*f.Tags.Offset+3,
+					*f.Tags.Offset+3,
+				),
+			)
+		} else {
+			sb.WriteString(
+				//nolint:lll
+				fmt.Sprintf("\tm.%s = uint64(buf[%d]>>8 | buf[%d]<<8) | uint64(buf[%d]>>8 | buf[%d]<<8)<<16 | uint64(buf[%d]>>8 | buf[%d]<<8)<<32 | uint64(buf[%d]>>8 | buf[%d]<<8)<<48\n",
+					f.Name,
+					*f.Tags.Offset,
+					*f.Tags.Offset,
+					*f.Tags.Offset+1,
+					*f.Tags.Offset+1,
+					*f.Tags.Offset+2,
+					*f.Tags.Offset+2,
+					*f.Tags.Offset+3,
+					*f.Tags.Offset+3,
+				),
+			)
+		}
+	}
+
+	return sb.String()
+}
+
+type FieldInt64 struct {
+	Field
+}
+
+func (f FieldInt64) Marshaler() string {
+	var sb strings.Builder
+
+	sb.WriteString(f.Comment())
+
+	switch *f.Tags.Encoding {
+	case BigEndian:
+		sb.WriteString(fmt.Sprintf("\tbuf[%d] = uint16(m.%s)\n", *f.Tags.Offset, f.Name))
+		sb.WriteString(fmt.Sprintf("\tbuf[%d] = uint16(m.%s>>16)\n", *f.Tags.Offset+1, f.Name))
+		sb.WriteString(fmt.Sprintf("\tbuf[%d] = uint16(m.%s>>32)\n", *f.Tags.Offset+2, f.Name))
+		sb.WriteString(fmt.Sprintf("\tbuf[%d] = uint16(m.%s>>48)\n", *f.Tags.Offset+3, f.Name))
+	case LittleEndian:
+		sb.WriteString(
+			fmt.Sprintf(
+				"\tbuf[%d] = uint16(m.%s>>8) | uint16(m.%s<<8)\n",
+				*f.Tags.Offset,
+				f.Name,
+				f.Name,
+			),
+		)
+		sb.WriteString(
+			fmt.Sprintf(
+				"\tbuf[%d] = uint16(m.%s>>24) | uint16(m.%s<<24)\n",
+				*f.Tags.Offset+1,
+				f.Name,
+				f.Name,
+			),
+		)
+		sb.WriteString(
+			fmt.Sprintf(
+				"\tbuf[%d] = uint16(m.%s>>40) | uint16(m.%s<<40)\n",
+				*f.Tags.Offset+2,
+				f.Name,
+				f.Name,
+			),
+		)
+		sb.WriteString(
+			fmt.Sprintf(
+				"\tbuf[%d] = uint16(m.%s>>56) | uint16(m.%s<<56)\n",
+				*f.Tags.Offset+3,
+				f.Name,
+				f.Name,
+			),
+		)
+	}
+
+	return sb.String()
+}
+
+func (f FieldInt64) Unmarshaler() string {
+	var sb strings.Builder
+
+	sb.WriteString(f.Comment())
+
+	switch *f.Tags.Encoding {
+	case BigEndian:
+		if f.IsCustomType {
+			sb.WriteString(
+				fmt.Sprintf(
+					"\tm.%s = %s(buf[%d]) | %s(buf[%d]) << 16 | %s(buf[%d]) << 32 | %s(buf[%d]) << 48\n",
+					f.Name,
+					f.CustomType,
+					*f.Tags.Offset,
+					f.CustomType,
+					*f.Tags.Offset+1,
+					f.CustomType,
+					*f.Tags.Offset+2,
+					f.CustomType,
+					*f.Tags.Offset+3,
+				),
+			)
+		} else {
+			sb.WriteString(
+				fmt.Sprintf(
+					"\tm.%s = int64(buf[%d]) | int64(buf[%d]) << 16 | int64(buf[%d]) << 32 | int64(buf[%d]) << 48\n",
+					f.Name,
+					*f.Tags.Offset,
+					*f.Tags.Offset+1,
+					*f.Tags.Offset+2,
+					*f.Tags.Offset+3,
+				),
+			)
+		}
+	case LittleEndian:
+		if f.IsCustomType {
+			sb.WriteString(
+				//nolint:lll
+				fmt.Sprintf(
+					"\tm.%s = %s(buf[%d]>>8 | buf[%d]<<8) | %s(buf[%d]>>8 | buf[%d]<<8)<<16 | %s(buf[%d]>>8 | buf[%d]<<8)<<32 | %s(buf[%d]>>8 | buf[%d]<<8)<<48\n",
+					f.Name,
+					f.CustomType,
+					*f.Tags.Offset,
+					*f.Tags.Offset,
+					f.CustomType,
+					*f.Tags.Offset+1,
+					*f.Tags.Offset+1,
+					f.CustomType,
+					*f.Tags.Offset+2,
+					*f.Tags.Offset+2,
+					f.CustomType,
+					*f.Tags.Offset+3,
+					*f.Tags.Offset+3,
+				),
+			)
+		} else {
+			sb.WriteString(
+				//nolint:lll
+				fmt.Sprintf("\tm.%s = int64(buf[%d]>>8 | buf[%d]<<8) | int64(buf[%d]>>8 | buf[%d]<<8)<<16 | int64(buf[%d]>>8 | buf[%d]<<8)<<32 | int64(buf[%d]>>8 | buf[%d]<<8)<<48\n",
+					f.Name,
+					*f.Tags.Offset,
+					*f.Tags.Offset,
+					*f.Tags.Offset+1,
+					*f.Tags.Offset+1,
+					*f.Tags.Offset+2,
+					*f.Tags.Offset+2,
+					*f.Tags.Offset+3,
+					*f.Tags.Offset+3,
 				),
 			)
 		}

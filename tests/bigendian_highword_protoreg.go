@@ -3,11 +3,14 @@ package tests
 
 import (
 	"github.com/Nocccer/protoreg/tests/sub"
+	"math"
 )
 
 func (m BigEndianHighWord) Marshal() ([]uint16, error) {
-	buf := make([]uint16, 47)
+	buf := make([]uint16, 51)
 	var i int
+	var tmp32 uint32
+	var tmp64 uint64
 	// Uint8Low
 	buf[0] = buf[0] | uint16(m.Uint8Low)
 	// Uint8High
@@ -27,6 +30,29 @@ func (m BigEndianHighWord) Marshal() ([]uint16, error) {
 	// Uint32
 	buf[5] = uint16(m.Uint32)
 	buf[6] = uint16(m.Uint32>>16)
+	// Int32
+	buf[7] = uint16(m.Int32)
+	buf[8] = uint16(m.Int32>>16)
+	// Uint64
+	buf[9] = uint16(m.Uint64)
+	buf[10] = uint16(m.Uint64>>16)
+	buf[11] = uint16(m.Uint64>>32)
+	buf[12] = uint16(m.Uint64>>48)
+	// Int64
+	buf[13] = uint16(m.Int64)
+	buf[14] = uint16(m.Int64>>16)
+	buf[15] = uint16(m.Int64>>32)
+	buf[16] = uint16(m.Int64>>48)
+	// Float32
+	tmp32 = math.Float32bits(m.Float32)
+	buf[17] = uint16(tmp32)
+	buf[18] = uint16(tmp32>>16)
+	// Float64
+	tmp64 = math.Float64bits(m.Float64)
+	buf[21] = uint16(tmp64)
+	buf[22] = uint16(tmp64>>16)
+	buf[23] = uint16(tmp64>>32)
+	buf[24] = uint16(tmp64>>48)
 	// StringASCII8
 	length := len(m.StringASCII8)
 	if length % 2 != 0 { length += 1 }
@@ -34,24 +60,24 @@ func (m BigEndianHighWord) Marshal() ([]uint16, error) {
 	copy(bytes, m.StringASCII8)
 	for i := 0; i < length; i+=2 {
 		if i >= 16 {break}
-		buf[21+i/2] = uint16(bytes[i]) | uint16(bytes[i+1])<<8
+		buf[25+i/2] = uint16(bytes[i]) | uint16(bytes[i+1])<<8
 	}
 	// StringASCII16
 	for i := 0; i < len(m.StringASCII16); i++ {
 		if i >= 8 {break}
-		buf[29+i] = uint16(m.StringASCII16[i])
+		buf[33+i] = uint16(m.StringASCII16[i])
 	}
 	// StringUTF816
 	i = 0
 	for _, r := range m.StringUTF816 {
 		if i >= 8 {break}
-		buf[37+i] = uint16(r)
+		buf[41+i] = uint16(r)
 		i++
 	}
 	// CustomUint16
-	buf[45] = uint16(m.CustomUint16)
+	buf[49] = uint16(m.CustomUint16)
 	// CustomInt16
-	buf[46] = uint16(m.CustomInt16)
+	buf[50] = uint16(m.CustomInt16)
 
 	return buf, nil
 }
@@ -59,6 +85,8 @@ func (m BigEndianHighWord) Marshal() ([]uint16, error) {
 func (m *BigEndianHighWord) Unmarshal(buf []uint16) error {
 	var bytes []byte
 	var runes []rune
+	var tmp32 uint32
+	var tmp64 uint64
 	// Uint8Low
 	m.Uint8Low = uint8(buf[0])
 	// Uint8High
@@ -77,9 +105,21 @@ func (m *BigEndianHighWord) Unmarshal(buf []uint16) error {
 	m.Int16 = int16(buf[4])
 	// Uint32
 	m.Uint32 = uint32(buf[5]) | uint32(buf[6]) << 16
+	// Int32
+	m.Int32 = int32(buf[7]) | int32(buf[8]) << 16
+	// Uint64
+	m.Uint64 = uint64(buf[9]) | uint64(buf[10]) << 16 | uint64(buf[11]) << 32 | uint64(buf[12]) << 48
+	// Int64
+	m.Int64 = int64(buf[13]) | int64(buf[14]) << 16 | int64(buf[15]) << 32 | int64(buf[16]) << 48
+	// Float32
+	tmp32 = uint32(buf[17]) | uint32(buf[18]) << 16
+	m.Float32 = math.Float32frombits(tmp32)
+	// Float64
+	tmp64 = uint64(buf[21]) | uint64(buf[22]) << 16 | uint64(buf[23]) << 32 | uint64(buf[24]) << 48
+	m.Float64 = math.Float64frombits(tmp64)
 	// StringASCII8
 	bytes = make([]byte, 8)
-	for i, v := range buf[21:29] {
+	for i, v := range buf[25:33] {
 		low := byte(v)
 		if low == 0 {bytes = bytes[:i*2];break} // stop on empty char
 		bytes[i*2] = low
@@ -90,22 +130,22 @@ func (m *BigEndianHighWord) Unmarshal(buf []uint16) error {
 	m.StringASCII8 = string(bytes)
 	// StringASCII16
 	bytes = make([]byte, 8)
-	for i, v := range buf[29:37] {
+	for i, v := range buf[33:41] {
 		if v == 0 {bytes = bytes[:i];break} // stop on empty char
 		bytes[i] = byte(v)
 	}
 	m.StringASCII16 = string(bytes)
 	// StringUTF816
 	runes = make([]rune, 8)
-	for i, v := range buf[37:45] {
+	for i, v := range buf[41:49] {
 		if v == 0 {runes = runes[:i];break} // stop on empty char
 		runes[i] = rune(v)
 	}
 	m.StringUTF816 = string(runes)
 	// CustomUint16
-	m.CustomUint16 = CustomUint16(buf[45])
+	m.CustomUint16 = CustomUint16(buf[49])
 	// CustomInt16
-	m.CustomInt16 = sub.CustomInt16(int16(buf[46]))
+	m.CustomInt16 = sub.CustomInt16(int16(buf[50]))
 
 	return nil
 }

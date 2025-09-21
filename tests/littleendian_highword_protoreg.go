@@ -3,57 +3,123 @@ package tests
 
 import (
 	"github.com/Nocccer/protoreg/tests/sub"
+	"math"
 )
 
 func (m LittleEndianHighWord) Marshal() ([]uint16, error) {
-	buf := make([]uint16, 24)
-	// Field1
-	for i := 0; i < len(m.Field1); i++ {
-		if i >= 8 {break}
-		buf[0+i] = uint16(m.Field1[i])<<8
-	}
-	// Field2
-	buf[8] = uint16(m.Field2)>>8 | uint16(m.Field2)<<8
-	// Field3
-	buf[9] = uint16(m.Field3>>8) | uint16(m.Field3<<8)
-	// Field4
-	buf[10] = m.Field4>>8 | m.Field4<<8
-	// Field5
-	length := len(m.Field5)
+	buf := make([]uint16, 51)
+	var i int
+	var tmp32 uint32
+	var tmp64 uint64
+	// Uint8Low
+	buf[0] = buf[0] | uint16(m.Uint8Low)<<8
+	// Uint8High
+	buf[0] = buf[0] | uint16(m.Uint8High)
+	// ByteLow
+	buf[1] = buf[1] | uint16(m.ByteLow)<<8
+	// ByteHigh
+	buf[1] = buf[1] | uint16(m.ByteHigh)
+	// Int8Low
+	buf[2] = buf[2] | uint16(uint8(m.Int8Low))<<8
+	// Int8High
+	buf[2] = buf[2] | uint16(uint8(m.Int8High))
+	// Uint16
+	buf[3] = m.Uint16>>8 | m.Uint16<<8
+	// Int16
+	buf[4] = uint16(m.Int16)>>8 | uint16(m.Int16)<<8
+	// Uint32
+	buf[5] = uint16(m.Uint32>>8) | uint16(m.Uint32<<8)
+	buf[6] = uint16(m.Uint32>>24) | uint16(m.Uint32<<24)
+	// Int32
+	buf[7] = uint16(m.Int32>>8) | uint16(m.Int32<<8)
+	buf[8] = uint16(m.Int32>>24) | uint16(m.Int32<<24)
+	// Uint64
+	buf[9] = uint16(m.Uint64>>8) | uint16(m.Uint64<<8)
+	buf[10] = uint16(m.Uint64>>24) | uint16(m.Uint64<<24)
+	buf[11] = uint16(m.Uint64>>40) | uint16(m.Uint64<<40)
+	buf[12] = uint16(m.Uint64>>56) | uint16(m.Uint64<<56)
+	// Int64
+	buf[13] = uint16(m.Int64>>8) | uint16(m.Int64<<8)
+	buf[14] = uint16(m.Int64>>24) | uint16(m.Int64<<24)
+	buf[15] = uint16(m.Int64>>40) | uint16(m.Int64<<40)
+	buf[16] = uint16(m.Int64>>56) | uint16(m.Int64<<56)
+	// Float32
+	tmp32 = math.Float32bits(m.Float32)
+	buf[17] = uint16(tmp32>>8) | uint16(tmp32<<8)
+	buf[18] = uint16(tmp32>>24) | uint16(tmp32<<24)
+	// Float64
+	tmp64 = math.Float64bits(m.Float64)
+	buf[21] = uint16(tmp64>>8) | uint16(tmp64<<8)
+	buf[22] = uint16(tmp64>>24) | uint16(tmp64<<24)
+	buf[23] = uint16(tmp64>>40) | uint16(tmp64<<40)
+	buf[24] = uint16(tmp64>>56) | uint16(tmp64<<56)
+	// StringASCII8
+	length := len(m.StringASCII8)
 	if length % 2 != 0 { length += 1 }
 	bytes := make([]byte, length)
-	copy(bytes, m.Field5)
+	copy(bytes, m.StringASCII8)
 	for i := 0; i < length; i+=2 {
 		if i >= 16 {break}
-		buf[11+i/2] = uint16(bytes[i])<<8 | uint16(bytes[i+1])
+		buf[25+i/2] = uint16(bytes[i])<<8 | uint16(bytes[i+1])
 	}
-	// Field6
-	buf[19] = uint16(m.Field6)>>8 | uint16(m.Field6)<<8
-	// Field7
-	buf[20] = uint16(m.Field7>>8) | uint16(m.Field7<<8)
-	buf[21] = uint16(m.Field7>>24) | uint16(m.Field7<<24)
+	// StringASCII16
+	for i := 0; i < len(m.StringASCII16); i++ {
+		if i >= 8 {break}
+		buf[33+i] = uint16(m.StringASCII16[i])<<8
+	}
+	// StringUTF816
+	i = 0
+	for _, r := range m.StringUTF816 {
+		if i >= 8 {break}
+		buf[41+i] = uint16(r>>8) | uint16(r<<8)
+		i++
+	}
+	// CustomUint16
+	buf[49] = uint16(m.CustomUint16>>8) | uint16(m.CustomUint16<<8)
+	// CustomInt16
+	buf[50] = uint16(m.CustomInt16)>>8 | uint16(m.CustomInt16)<<8
 
 	return buf, nil
 }
 
 func (m *LittleEndianHighWord) Unmarshal(buf []uint16) error {
 	var bytes []byte
-	// Field1
+	var runes []rune
+	var tmp32 uint32
+	var tmp64 uint64
+	// Uint8Low
+	m.Uint8Low = uint8(buf[0]>>8)
+	// Uint8High
+	m.Uint8High = uint8(buf[0])
+	// ByteLow
+	m.ByteLow = uint8(buf[1]>>8)
+	// ByteHigh
+	m.ByteHigh = uint8(buf[1])
+	// Int8Low
+	m.Int8Low = int8(buf[2]>>8)
+	// Int8High
+	m.Int8High = int8(buf[2])
+	// Uint16
+	m.Uint16 = buf[3]>>8 | buf[3]<<8
+	// Int16
+	m.Int16 = int16(buf[4]>>8 | buf[4]<<8)
+	// Uint32
+	m.Uint32 = uint32(buf[5]>>8 | buf[5]<<8) | uint32(buf[6]>>8 | buf[6]<<8)<<16
+	// Int32
+	m.Int32 = int32(buf[7]>>8 | buf[7]<<8) | int32(buf[8]>>8 | buf[8]<<8)<<16
+	// Uint64
+	m.Uint64 = uint64(buf[9]>>8 | buf[9]<<8) | uint64(buf[10]>>8 | buf[10]<<8)<<16 | uint64(buf[11]>>8 | buf[11]<<8)<<32 | uint64(buf[12]>>8 | buf[12]<<8)<<48
+	// Int64
+	m.Int64 = int64(buf[13]>>8 | buf[13]<<8) | int64(buf[14]>>8 | buf[14]<<8)<<16 | int64(buf[15]>>8 | buf[15]<<8)<<32 | int64(buf[16]>>8 | buf[16]<<8)<<48
+	// Float32
+	tmp32 = uint32(buf[17]>>8 | buf[17]<<8) | uint32(buf[18]>>8 | buf[18]<<8)<<16
+	m.Float32 = math.Float32frombits(tmp32)
+	// Float64
+	tmp64 = uint64(buf[21]>>8 | buf[21]<<8) | uint64(buf[22]>>8 | buf[22]<<8)<<16 | uint64(buf[23]>>8 | buf[23]<<8)<<32 | uint64(buf[24]>>8 | buf[24]<<8)<<48
+	m.Float64 = math.Float64frombits(tmp64)
+	// StringASCII8
 	bytes = make([]byte, 8)
-	for i, v := range buf[0:8] {
-		if v == 0 {bytes = bytes[:i];break} // stop on empty char
-		bytes[i] = byte(v>>8)
-	}
-	m.Field1 = string(bytes)
-	// Field2
-	m.Field2 = int16(buf[8]>>8 | buf[8]<<8)
-	// Field3
-	m.Field3 = CustomUint16(buf[9]>>8 | buf[9]<<8)
-	// Field4
-	m.Field4 = buf[10]>>8 | buf[10]<<8
-	// Field5
-	bytes = make([]byte, 8)
-	for i, v := range buf[11:19] {
+	for i, v := range buf[25:33] {
 		low := byte(v>>8)
 		if low == 0 {bytes = bytes[:i*2];break} // stop on empty char
 		bytes[i*2] = low
@@ -61,11 +127,25 @@ func (m *LittleEndianHighWord) Unmarshal(buf []uint16) error {
 		if high == 0 {bytes = bytes[:i*2+1];break} // stop on empty char
 		bytes[i*2+1] = high
 	}
-	m.Field5 = string(bytes)
-	// Field6
-	m.Field6 = sub.CustomInt16(int16(buf[19]>>8 | buf[19]<<8))
-	// Field7
-	m.Field7 = uint32(buf[20]>>8 | buf[20]<<8) | uint32(buf[21]>>8 | buf[21]<<8)<<16
+	m.StringASCII8 = string(bytes)
+	// StringASCII16
+	bytes = make([]byte, 8)
+	for i, v := range buf[33:41] {
+		if v == 0 {bytes = bytes[:i];break} // stop on empty char
+		bytes[i] = byte(v>>8)
+	}
+	m.StringASCII16 = string(bytes)
+	// StringUTF816
+	runes = make([]rune, 8)
+	for i, v := range buf[41:49] {
+		if v == 0 {runes = runes[:i];break} // stop on empty char
+		runes[i] = rune(v>>8) | rune(v<<8)
+	}
+	m.StringUTF816 = string(runes)
+	// CustomUint16
+	m.CustomUint16 = CustomUint16(buf[49]>>8 | buf[49]<<8)
+	// CustomInt16
+	m.CustomInt16 = sub.CustomInt16(int16(buf[50]>>8 | buf[50]<<8))
 
 	return nil
 }
