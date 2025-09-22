@@ -34,9 +34,9 @@ func (s *LittleEndianHighWordTestSuite) SetupTest() {
 		Int64:         -1111222233334444,
 		Float32:       1234.5678,
 		Float64:       -1234.5678,
-		StringASCII8:  "TestDat1",
-		StringASCII16: "TestDat2",
-		StringUTF816:  "TestDät3", // add utf8 char
+		StringASCII8:  "TestData1",
+		StringASCII16: "TestData2",
+		StringUTF816:  "TestDäta3", // add utf8 char
 		CustomUint16:  tests.CustomUint16(123),
 		CustomInt16:   sub.CustomInt16(-789),
 	}
@@ -74,9 +74,9 @@ func BenchmarkLittleEndianHighWordMarshal(b *testing.B) {
 		Int64:         -1111222233334444,
 		Float32:       1234.5678,
 		Float64:       -1234.5678,
-		StringASCII8:  "TestDat1",
-		StringASCII16: "TestDat2",
-		StringUTF816:  "TestDät3", // add utf8 char
+		StringASCII8:  "TestData1",
+		StringASCII16: "TestData2",
+		StringUTF816:  "TestDäta3", // add utf8 char
 		CustomUint16:  tests.CustomUint16(123),
 		CustomInt16:   sub.CustomInt16(-789),
 	}
@@ -106,9 +106,9 @@ func BenchmarkLittleEndianHighWordUnmarshal(b *testing.B) {
 		Int64:         -1111222233334444,
 		Float32:       1234.5678,
 		Float64:       -1234.5678,
-		StringASCII8:  "TestDat1",
-		StringASCII16: "TestDat2",
-		StringUTF816:  "TestDät3", // add utf8 char
+		StringASCII8:  "TestData1",
+		StringASCII16: "TestData2",
+		StringUTF816:  "TestDäta3", // add utf8 char
 		CustomUint16:  tests.CustomUint16(123),
 		CustomInt16:   sub.CustomInt16(-789),
 	}

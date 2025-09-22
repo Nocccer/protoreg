@@ -104,10 +104,21 @@ func (g *ProtoRegGen) Imports() string {
 	}
 
 	sb.WriteString("import (\n")
-	g.imports = slices.Compact(g.imports)
+	std, thirdparty := splitFunc(g.imports, func(i string) bool {
+		return !strings.Contains(i, "github")
+	})
 
-	slices.Sort(g.imports)
-	for _, imp := range g.imports {
+	slices.Sort(std)
+	std = slices.Compact(std)
+
+	slices.Sort(thirdparty)
+	thirdparty = slices.Compact(thirdparty)
+
+	for _, imp := range std {
+		sb.WriteString(fmt.Sprintf("\t\"%s\"\n", imp))
+	}
+	sb.WriteString("\n")
+	for _, imp := range thirdparty {
 		sb.WriteString(fmt.Sprintf("\t\"%s\"\n", imp))
 	}
 	sb.WriteString(")\n\n")

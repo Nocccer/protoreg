@@ -69,22 +69,22 @@ func (f FieldString) Marshaler() string {
 	switch *f.Tags.Char {
 	case Char8:
 		sb.WriteString(fmt.Sprintf("\tlength := len(m.%s)\n", f.Name))
-		sb.WriteString("\tif length % 2 != 0 { length += 1 }\n")
-		sb.WriteString("\tbytes := make([]byte, length)\n")
-		sb.WriteString(fmt.Sprintf("\tcopy(bytes, m.%s)\n", f.Name))
 		sb.WriteString("\tfor i := 0; i < length; i+=2 {\n")
 		sb.WriteString(fmt.Sprintf("\t\tif i >= %d {break}\n", *f.Tags.Size*2))
+		sb.WriteString(fmt.Sprintf("\t\tb1 := m.%s[i]\n", f.Name))
+		sb.WriteString("\t\tvar b2 byte\n")
+		sb.WriteString(fmt.Sprintf("\t\tif i+1 < length {b2 = m.%s[i+1]}\n", f.Name))
 		if *f.Tags.Encoding == BigEndian {
 			sb.WriteString(
 				fmt.Sprintf(
-					"\t\tbuf[%d+i/2] = uint16(bytes[i]) | uint16(bytes[i+1])<<8\n",
+					"\t\tbuf[%d+i/2] = uint16(b1) | uint16(b2)<<8\n",
 					*f.Tags.Offset,
 				),
 			)
 		} else {
 			sb.WriteString(
 				fmt.Sprintf(
-					"\t\tbuf[%d+i/2] = uint16(bytes[i])<<8 | uint16(bytes[i+1])\n",
+					"\t\tbuf[%d+i/2] = uint16(b1)<<8 | uint16(b2)\n",
 					*f.Tags.Offset,
 				),
 			)
@@ -144,7 +144,7 @@ func (f FieldString) Unmarshaler() string {
 
 	switch *f.Tags.Char {
 	case Char8:
-		sb.WriteString(fmt.Sprintf("\tbytes = make([]byte, %d)\n", *f.Tags.Size))
+		sb.WriteString(fmt.Sprintf("\tbytes = make([]byte, %d)\n", *f.Tags.Size*2))
 		sb.WriteString(
 			fmt.Sprintf(
 				"\tfor i, v := range buf[%d:%d] {\n",

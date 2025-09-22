@@ -37,6 +37,9 @@ func (g *ProtoRegGen) newFloatGen(name string, typ types.Type, tags Tags) (NewGe
 	}
 
 	g.imports = append(g.imports, "math")
+	if *field.Tags.Encoding == LittleEndian {
+		g.imports = append(g.imports, "math/bits")
+	}
 
 	switch typ.Underlying().String() {
 	case "float32":
@@ -73,13 +76,13 @@ func (f FieldFloat32) Marshaler() string {
 	case LittleEndian:
 		sb.WriteString(
 			fmt.Sprintf(
-				"\tbuf[%d] = uint16(tmp32>>8) | uint16(tmp32<<8)\n",
+				"\tbuf[%d] = bits.ReverseBytes16(uint16(tmp32))\n",
 				*f.Tags.Offset,
 			),
 		)
 		sb.WriteString(
 			fmt.Sprintf(
-				"\tbuf[%d] = uint16(tmp32>>24) | uint16(tmp32<<24)\n",
+				"\tbuf[%d] = bits.ReverseBytes16(uint16(tmp32>>16))\n",
 				*f.Tags.Offset+1,
 			),
 		)
@@ -105,10 +108,8 @@ func (f FieldFloat32) Unmarshaler() string {
 	case LittleEndian:
 		sb.WriteString(
 			fmt.Sprintf(
-				"\ttmp32 = uint32(buf[%d]>>8 | buf[%d]<<8) | uint32(buf[%d]>>8 | buf[%d]<<8)<<16\n",
+				"\ttmp32 = uint32(bits.ReverseBytes16(buf[%d])) | uint32(bits.ReverseBytes16(buf[%d]))<<16\n",
 				*f.Tags.Offset,
-				*f.Tags.Offset,
-				*f.Tags.Offset+1,
 				*f.Tags.Offset+1,
 			),
 		)
@@ -146,25 +147,25 @@ func (f FieldFloat64) Marshaler() string {
 	case LittleEndian:
 		sb.WriteString(
 			fmt.Sprintf(
-				"\tbuf[%d] = uint16(tmp64>>8) | uint16(tmp64<<8)\n",
+				"\tbuf[%d] = bits.ReverseBytes16(uint16(tmp64))\n",
 				*f.Tags.Offset,
 			),
 		)
 		sb.WriteString(
 			fmt.Sprintf(
-				"\tbuf[%d] = uint16(tmp64>>24) | uint16(tmp64<<24)\n",
+				"\tbuf[%d] = bits.ReverseBytes16(uint16(tmp64>>16))\n",
 				*f.Tags.Offset+1,
 			),
 		)
 		sb.WriteString(
 			fmt.Sprintf(
-				"\tbuf[%d] = uint16(tmp64>>40) | uint16(tmp64<<40)\n",
+				"\tbuf[%d] = bits.ReverseBytes16(uint16(tmp64>>32))\n",
 				*f.Tags.Offset+2,
 			),
 		)
 		sb.WriteString(
 			fmt.Sprintf(
-				"\tbuf[%d] = uint16(tmp64>>56) | uint16(tmp64<<56)\n",
+				"\tbuf[%d] = bits.ReverseBytes16(uint16(tmp64>>48))\n",
 				*f.Tags.Offset+3,
 			),
 		)
@@ -193,14 +194,10 @@ func (f FieldFloat64) Unmarshaler() string {
 		sb.WriteString(
 			// nolint:lll
 			fmt.Sprintf(
-				"\ttmp64 = uint64(buf[%d]>>8 | buf[%d]<<8) | uint64(buf[%d]>>8 | buf[%d]<<8)<<16 | uint64(buf[%d]>>8 | buf[%d]<<8)<<32 | uint64(buf[%d]>>8 | buf[%d]<<8)<<48\n",
-				*f.Tags.Offset,
+				"\ttmp64 = uint64(bits.ReverseBytes16(buf[%d])) | uint64(bits.ReverseBytes16(buf[%d]))<<16 | uint64(bits.ReverseBytes16(buf[%d]))<<32 | uint64(bits.ReverseBytes16(buf[%d]))<<48\n",
 				*f.Tags.Offset,
 				*f.Tags.Offset+1,
-				*f.Tags.Offset+1,
 				*f.Tags.Offset+2,
-				*f.Tags.Offset+2,
-				*f.Tags.Offset+3,
 				*f.Tags.Offset+3,
 			),
 		)

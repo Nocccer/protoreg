@@ -2,12 +2,14 @@
 package tests
 
 import (
-	"github.com/Nocccer/protoreg/tests/sub"
 	"math"
+	"math/bits"
+
+	"github.com/Nocccer/protoreg/tests/sub"
 )
 
 func (m LittleEndianHighWord) Marshal() ([]uint16, error) {
-	buf := make([]uint16, 51)
+	buf := make([]uint16, 54)
 	var i int
 	var tmp32 uint32
 	var tmp64 uint64
@@ -24,60 +26,60 @@ func (m LittleEndianHighWord) Marshal() ([]uint16, error) {
 	// Int8High
 	buf[2] = buf[2] | uint16(uint8(m.Int8High))
 	// Uint16
-	buf[3] = m.Uint16>>8 | m.Uint16<<8
+	buf[3] = bits.ReverseBytes16(m.Uint16)
 	// Int16
-	buf[4] = uint16(m.Int16)>>8 | uint16(m.Int16)<<8
+	buf[4] = bits.ReverseBytes16(uint16(m.Int16))
 	// Uint32
-	buf[5] = uint16(m.Uint32>>8) | uint16(m.Uint32<<8)
-	buf[6] = uint16(m.Uint32>>24) | uint16(m.Uint32<<24)
+	buf[5] = bits.ReverseBytes16(uint16(m.Uint32))
+	buf[6] = bits.ReverseBytes16(uint16(m.Uint32>>16))
 	// Int32
-	buf[7] = uint16(m.Int32>>8) | uint16(m.Int32<<8)
-	buf[8] = uint16(m.Int32>>24) | uint16(m.Int32<<24)
+	buf[7] = bits.ReverseBytes16(uint16(m.Int32))
+	buf[8] = bits.ReverseBytes16(uint16(m.Int32>>16))
 	// Uint64
-	buf[9] = uint16(m.Uint64>>8) | uint16(m.Uint64<<8)
-	buf[10] = uint16(m.Uint64>>24) | uint16(m.Uint64<<24)
-	buf[11] = uint16(m.Uint64>>40) | uint16(m.Uint64<<40)
-	buf[12] = uint16(m.Uint64>>56) | uint16(m.Uint64<<56)
+	buf[9] = bits.ReverseBytes16(uint16(m.Uint64))
+	buf[10] = bits.ReverseBytes16(uint16(m.Uint64>>16))
+	buf[11] = bits.ReverseBytes16(uint16(m.Uint64>>32))
+	buf[12] = bits.ReverseBytes16(uint16(m.Uint64>>48))
 	// Int64
-	buf[13] = uint16(m.Int64>>8) | uint16(m.Int64<<8)
-	buf[14] = uint16(m.Int64>>24) | uint16(m.Int64<<24)
-	buf[15] = uint16(m.Int64>>40) | uint16(m.Int64<<40)
-	buf[16] = uint16(m.Int64>>56) | uint16(m.Int64<<56)
+	buf[13] = bits.ReverseBytes16(uint16(m.Int64))
+	buf[14] = bits.ReverseBytes16(uint16(m.Int64>>16))
+	buf[15] = bits.ReverseBytes16(uint16(m.Int64>>32))
+	buf[16] = bits.ReverseBytes16(uint16(m.Int64>>48))
 	// Float32
 	tmp32 = math.Float32bits(m.Float32)
-	buf[17] = uint16(tmp32>>8) | uint16(tmp32<<8)
-	buf[18] = uint16(tmp32>>24) | uint16(tmp32<<24)
+	buf[17] = bits.ReverseBytes16(uint16(tmp32))
+	buf[18] = bits.ReverseBytes16(uint16(tmp32>>16))
 	// Float64
 	tmp64 = math.Float64bits(m.Float64)
-	buf[21] = uint16(tmp64>>8) | uint16(tmp64<<8)
-	buf[22] = uint16(tmp64>>24) | uint16(tmp64<<24)
-	buf[23] = uint16(tmp64>>40) | uint16(tmp64<<40)
-	buf[24] = uint16(tmp64>>56) | uint16(tmp64<<56)
+	buf[21] = bits.ReverseBytes16(uint16(tmp64))
+	buf[22] = bits.ReverseBytes16(uint16(tmp64>>16))
+	buf[23] = bits.ReverseBytes16(uint16(tmp64>>32))
+	buf[24] = bits.ReverseBytes16(uint16(tmp64>>48))
 	// StringASCII8
 	length := len(m.StringASCII8)
-	if length % 2 != 0 { length += 1 }
-	bytes := make([]byte, length)
-	copy(bytes, m.StringASCII8)
 	for i := 0; i < length; i+=2 {
-		if i >= 16 {break}
-		buf[25+i/2] = uint16(bytes[i])<<8 | uint16(bytes[i+1])
+		if i >= 18 {break}
+		b1 := m.StringASCII8[i]
+		var b2 byte
+		if i+1 < length {b2 = m.StringASCII8[i+1]}
+		buf[25+i/2] = uint16(b1)<<8 | uint16(b2)
 	}
 	// StringASCII16
 	for i := 0; i < len(m.StringASCII16); i++ {
-		if i >= 8 {break}
-		buf[33+i] = uint16(m.StringASCII16[i])<<8
+		if i >= 9 {break}
+		buf[34+i] = uint16(m.StringASCII16[i])<<8
 	}
 	// StringUTF816
 	i = 0
 	for _, r := range m.StringUTF816 {
-		if i >= 8 {break}
-		buf[41+i] = uint16(r>>8) | uint16(r<<8)
+		if i >= 9 {break}
+		buf[43+i] = uint16(r>>8) | uint16(r<<8)
 		i++
 	}
 	// CustomUint16
-	buf[49] = uint16(m.CustomUint16>>8) | uint16(m.CustomUint16<<8)
+	buf[52] = bits.ReverseBytes16(uint16(m.CustomUint16))
 	// CustomInt16
-	buf[50] = uint16(m.CustomInt16)>>8 | uint16(m.CustomInt16)<<8
+	buf[53] = bits.ReverseBytes16(uint16(m.CustomInt16))
 
 	return buf, nil
 }
@@ -100,26 +102,26 @@ func (m *LittleEndianHighWord) Unmarshal(buf []uint16) error {
 	// Int8High
 	m.Int8High = int8(buf[2])
 	// Uint16
-	m.Uint16 = buf[3]>>8 | buf[3]<<8
+	m.Uint16 = bits.ReverseBytes16(buf[3])
 	// Int16
-	m.Int16 = int16(buf[4]>>8 | buf[4]<<8)
+	m.Int16 = int16(bits.ReverseBytes16(buf[4]))
 	// Uint32
-	m.Uint32 = uint32(buf[5]>>8 | buf[5]<<8) | uint32(buf[6]>>8 | buf[6]<<8)<<16
+	m.Uint32 = uint32(bits.ReverseBytes16(buf[5])) | uint32(bits.ReverseBytes16(buf[6]))<<16
 	// Int32
-	m.Int32 = int32(buf[7]>>8 | buf[7]<<8) | int32(buf[8]>>8 | buf[8]<<8)<<16
+	m.Int32 = int32(bits.ReverseBytes16(buf[7])) | int32(bits.ReverseBytes16(buf[8]))<<16
 	// Uint64
-	m.Uint64 = uint64(buf[9]>>8 | buf[9]<<8) | uint64(buf[10]>>8 | buf[10]<<8)<<16 | uint64(buf[11]>>8 | buf[11]<<8)<<32 | uint64(buf[12]>>8 | buf[12]<<8)<<48
+	m.Uint64 = uint64(bits.ReverseBytes16(buf[9])) | uint64(bits.ReverseBytes16(buf[10]))<<16 | uint64(bits.ReverseBytes16(buf[11]))<<32 | uint64(bits.ReverseBytes16(buf[12]))<<48
 	// Int64
-	m.Int64 = int64(buf[13]>>8 | buf[13]<<8) | int64(buf[14]>>8 | buf[14]<<8)<<16 | int64(buf[15]>>8 | buf[15]<<8)<<32 | int64(buf[16]>>8 | buf[16]<<8)<<48
+	m.Int64 = int64(bits.ReverseBytes16(buf[13])) | int64(bits.ReverseBytes16(buf[14]))<<16 | int64(bits.ReverseBytes16(buf[15]))<<32 | int64(bits.ReverseBytes16(buf[16]))<<48
 	// Float32
-	tmp32 = uint32(buf[17]>>8 | buf[17]<<8) | uint32(buf[18]>>8 | buf[18]<<8)<<16
+	tmp32 = uint32(bits.ReverseBytes16(buf[17])) | uint32(bits.ReverseBytes16(buf[18]))<<16
 	m.Float32 = math.Float32frombits(tmp32)
 	// Float64
-	tmp64 = uint64(buf[21]>>8 | buf[21]<<8) | uint64(buf[22]>>8 | buf[22]<<8)<<16 | uint64(buf[23]>>8 | buf[23]<<8)<<32 | uint64(buf[24]>>8 | buf[24]<<8)<<48
+	tmp64 = uint64(bits.ReverseBytes16(buf[21])) | uint64(bits.ReverseBytes16(buf[22]))<<16 | uint64(bits.ReverseBytes16(buf[23]))<<32 | uint64(bits.ReverseBytes16(buf[24]))<<48
 	m.Float64 = math.Float64frombits(tmp64)
 	// StringASCII8
-	bytes = make([]byte, 8)
-	for i, v := range buf[25:33] {
+	bytes = make([]byte, 18)
+	for i, v := range buf[25:34] {
 		low := byte(v>>8)
 		if low == 0 {bytes = bytes[:i*2];break} // stop on empty char
 		bytes[i*2] = low
@@ -129,23 +131,23 @@ func (m *LittleEndianHighWord) Unmarshal(buf []uint16) error {
 	}
 	m.StringASCII8 = string(bytes)
 	// StringASCII16
-	bytes = make([]byte, 8)
-	for i, v := range buf[33:41] {
+	bytes = make([]byte, 9)
+	for i, v := range buf[34:43] {
 		if v == 0 {bytes = bytes[:i];break} // stop on empty char
 		bytes[i] = byte(v>>8)
 	}
 	m.StringASCII16 = string(bytes)
 	// StringUTF816
-	runes = make([]rune, 8)
-	for i, v := range buf[41:49] {
+	runes = make([]rune, 9)
+	for i, v := range buf[43:52] {
 		if v == 0 {runes = runes[:i];break} // stop on empty char
 		runes[i] = rune(v>>8) | rune(v<<8)
 	}
 	m.StringUTF816 = string(runes)
 	// CustomUint16
-	m.CustomUint16 = CustomUint16(buf[49]>>8 | buf[49]<<8)
+	m.CustomUint16 = CustomUint16(bits.ReverseBytes16(buf[52]))
 	// CustomInt16
-	m.CustomInt16 = sub.CustomInt16(int16(buf[50]>>8 | buf[50]<<8))
+	m.CustomInt16 = sub.CustomInt16(bits.ReverseBytes16(buf[53]))
 
 	return nil
 }

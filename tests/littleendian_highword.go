@@ -21,9 +21,9 @@ type LittleEndianHighWord struct {
 	Int64         int64           `protoreg:"offset=13"`
 	Float32       float32         `protoreg:"offset=17"`
 	Float64       float64         `protoreg:"offset=21"`
-	StringASCII8  string          `protoreg:"offset=25,size=8,char=8"`
-	StringASCII16 string          `protoreg:"offset=33,size=8,char=16"`
-	StringUTF816  string          `protoreg:"offset=41,size=8,char=16,charencoding=utf8"`
-	CustomUint16  CustomUint16    `protoreg:"offset=49"`
-	CustomInt16   sub.CustomInt16 `protoreg:"offset=50"`
+	StringASCII8  string          `protoreg:"offset=25,size=9,char=8"`
+	StringASCII16 string          `protoreg:"offset=34,size=9,char=16"`
+	StringUTF816  string          `protoreg:"offset=43,size=9,char=16,charencoding=utf8"`
+	CustomUint16  CustomUint16    `protoreg:"offset=52"`
+	CustomInt16   sub.CustomInt16 `protoreg:"offset=53"`
 }

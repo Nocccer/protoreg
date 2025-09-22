@@ -2,12 +2,13 @@
 package tests
 
 import (
-	"github.com/Nocccer/protoreg/tests/sub"
 	"math"
+
+	"github.com/Nocccer/protoreg/tests/sub"
 )
 
 func (m BigEndianHighWord) Marshal() ([]uint16, error) {
-	buf := make([]uint16, 51)
+	buf := make([]uint16, 54)
 	var i int
 	var tmp32 uint32
 	var tmp64 uint64
@@ -55,29 +56,29 @@ func (m BigEndianHighWord) Marshal() ([]uint16, error) {
 	buf[24] = uint16(tmp64>>48)
 	// StringASCII8
 	length := len(m.StringASCII8)
-	if length % 2 != 0 { length += 1 }
-	bytes := make([]byte, length)
-	copy(bytes, m.StringASCII8)
 	for i := 0; i < length; i+=2 {
-		if i >= 16 {break}
-		buf[25+i/2] = uint16(bytes[i]) | uint16(bytes[i+1])<<8
+		if i >= 18 {break}
+		b1 := m.StringASCII8[i]
+		var b2 byte
+		if i+1 < length {b2 = m.StringASCII8[i+1]}
+		buf[25+i/2] = uint16(b1) | uint16(b2)<<8
 	}
 	// StringASCII16
 	for i := 0; i < len(m.StringASCII16); i++ {
-		if i >= 8 {break}
-		buf[33+i] = uint16(m.StringASCII16[i])
+		if i >= 9 {break}
+		buf[34+i] = uint16(m.StringASCII16[i])
 	}
 	// StringUTF816
 	i = 0
 	for _, r := range m.StringUTF816 {
-		if i >= 8 {break}
-		buf[41+i] = uint16(r)
+		if i >= 9 {break}
+		buf[43+i] = uint16(r)
 		i++
 	}
 	// CustomUint16
-	buf[49] = uint16(m.CustomUint16)
+	buf[52] = uint16(m.CustomUint16)
 	// CustomInt16
-	buf[50] = uint16(m.CustomInt16)
+	buf[53] = uint16(m.CustomInt16)
 
 	return buf, nil
 }
@@ -118,8 +119,8 @@ func (m *BigEndianHighWord) Unmarshal(buf []uint16) error {
 	tmp64 = uint64(buf[21]) | uint64(buf[22]) << 16 | uint64(buf[23]) << 32 | uint64(buf[24]) << 48
 	m.Float64 = math.Float64frombits(tmp64)
 	// StringASCII8
-	bytes = make([]byte, 8)
-	for i, v := range buf[25:33] {
+	bytes = make([]byte, 18)
+	for i, v := range buf[25:34] {
 		low := byte(v)
 		if low == 0 {bytes = bytes[:i*2];break} // stop on empty char
 		bytes[i*2] = low
@@ -129,23 +130,23 @@ func (m *BigEndianHighWord) Unmarshal(buf []uint16) error {
 	}
 	m.StringASCII8 = string(bytes)
 	// StringASCII16
-	bytes = make([]byte, 8)
-	for i, v := range buf[33:41] {
+	bytes = make([]byte, 9)
+	for i, v := range buf[34:43] {
 		if v == 0 {bytes = bytes[:i];break} // stop on empty char
 		bytes[i] = byte(v)
 	}
 	m.StringASCII16 = string(bytes)
 	// StringUTF816
-	runes = make([]rune, 8)
-	for i, v := range buf[41:49] {
+	runes = make([]rune, 9)
+	for i, v := range buf[43:52] {
 		if v == 0 {runes = runes[:i];break} // stop on empty char
 		runes[i] = rune(v)
 	}
 	m.StringUTF816 = string(runes)
 	// CustomUint16
-	m.CustomUint16 = CustomUint16(buf[49])
+	m.CustomUint16 = CustomUint16(buf[52])
 	// CustomInt16
-	m.CustomInt16 = sub.CustomInt16(int16(buf[50]))
+	m.CustomInt16 = sub.CustomInt16(int16(buf[53]))
 
 	return nil
 }
