@@ -59,8 +59,8 @@ func (g *ProtoRegGen) extractField(
 
 func (g *ProtoRegGen) extractOpts(tagStr string) error {
 	// Extract encoding and word order from the tag string
-	parts := strings.Split(tagStr, ",")
-	for _, part := range parts {
+	parts := strings.SplitSeq(tagStr, ",")
+	for part := range parts {
 		switch {
 		case strings.HasPrefix(part, "encoding="):
 			g.encoding = Encoding(strings.TrimPrefix(part, "encoding="))

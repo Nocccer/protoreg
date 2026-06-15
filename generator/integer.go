@@ -44,22 +44,22 @@ func (g *ProtoRegGen) newIntegerGen(name string, typ types.Type, tags Tags) (New
 				name,
 			)
 		}
-		field.Tags.Size = ptrTo(1)
+		field.Tags.Size = new(1)
 	case "uint16", "int16":
 		if *field.Tags.Encoding == LittleEndian {
 			g.imports = append(g.imports, "math/bits")
 		}
-		field.Tags.Size = ptrTo(1)
+		field.Tags.Size = new(1)
 	case "uint32", "int32":
 		if *field.Tags.Encoding == LittleEndian {
 			g.imports = append(g.imports, "math/bits")
 		}
-		field.Tags.Size = ptrTo(2)
+		field.Tags.Size = new(2)
 	case "uint64", "int64":
 		if *field.Tags.Encoding == LittleEndian {
 			g.imports = append(g.imports, "math/bits")
 		}
-		field.Tags.Size = ptrTo(4)
+		field.Tags.Size = new(4)
 	default:
 		return NewGenResult{}, fmt.Errorf("unsupported integer type: %s", typ.String())
 	}
@@ -125,15 +125,11 @@ func (f FieldUint8) Marshaler() string {
 		shift = "<<8"
 	}
 
-	sb.WriteString(
-		fmt.Sprintf(
-			"\tbuf[%d] = buf[%d] | uint16(m.%s)%s\n",
-			*f.Tags.Offset,
-			*f.Tags.Offset,
-			f.Name,
-			shift,
-		),
-	)
+	fmt.Fprintf(&sb, "\tbuf[%d] = buf[%d] | uint16(m.%s)%s\n",
+		*f.Tags.Offset,
+		*f.Tags.Offset,
+		f.Name,
+		shift)
 
 	return sb.String()
 }
@@ -150,13 +146,9 @@ func (f FieldUint8) Unmarshaler() string {
 	}
 
 	if f.IsCustomType {
-		sb.WriteString(
-			fmt.Sprintf("\tm.%s = %s(buf[%d]%s)\n", f.Name, f.CustomType, *f.Tags.Offset, shift),
-		)
+		fmt.Fprintf(&sb, "\tm.%s = %s(buf[%d]%s)\n", f.Name, f.CustomType, *f.Tags.Offset, shift)
 	} else {
-		sb.WriteString(
-			fmt.Sprintf("\tm.%s = uint8(buf[%d]%s)\n", f.Name, *f.Tags.Offset, shift),
-		)
+		fmt.Fprintf(&sb, "\tm.%s = uint8(buf[%d]%s)\n", f.Name, *f.Tags.Offset, shift)
 	}
 
 	return sb.String()
@@ -177,15 +169,11 @@ func (f FieldInt8) Marshaler() string {
 		shift = "<<8"
 	}
 
-	sb.WriteString(
-		fmt.Sprintf(
-			"\tbuf[%d] = buf[%d] | uint16(uint8(m.%s))%s\n",
-			*f.Tags.Offset,
-			*f.Tags.Offset,
-			f.Name,
-			shift,
-		),
-	)
+	fmt.Fprintf(&sb, "\tbuf[%d] = buf[%d] | uint16(uint8(m.%s))%s\n",
+		*f.Tags.Offset,
+		*f.Tags.Offset,
+		f.Name,
+		shift)
 
 	return sb.String()
 }
@@ -202,13 +190,9 @@ func (f FieldInt8) Unmarshaler() string {
 	}
 
 	if f.IsCustomType {
-		sb.WriteString(
-			fmt.Sprintf("\tm.%s = %s(buf[%d]%s)\n", f.Name, f.CustomType, *f.Tags.Offset, shift),
-		)
+		fmt.Fprintf(&sb, "\tm.%s = %s(buf[%d]%s)\n", f.Name, f.CustomType, *f.Tags.Offset, shift)
 	} else {
-		sb.WriteString(
-			fmt.Sprintf("\tm.%s = int8(buf[%d]%s)\n", f.Name, *f.Tags.Offset, shift),
-		)
+		fmt.Fprintf(&sb, "\tm.%s = int8(buf[%d]%s)\n", f.Name, *f.Tags.Offset, shift)
 	}
 
 	return sb.String()
@@ -226,21 +210,17 @@ func (f FieldUint16) Marshaler() string {
 	switch *f.Tags.Encoding {
 	case BigEndian:
 		if f.IsCustomType {
-			sb.WriteString(fmt.Sprintf("\tbuf[%d] = uint16(m.%s)\n", *f.Tags.Offset, f.Name))
+			fmt.Fprintf(&sb, "\tbuf[%d] = uint16(m.%s)\n", *f.Tags.Offset, f.Name)
 		} else {
-			sb.WriteString(fmt.Sprintf("\tbuf[%d] = m.%s\n", *f.Tags.Offset, f.Name))
+			fmt.Fprintf(&sb, "\tbuf[%d] = m.%s\n", *f.Tags.Offset, f.Name)
 		}
 	case LittleEndian:
 		if f.IsCustomType {
-			sb.WriteString(
-				fmt.Sprintf(
-					"\tbuf[%d] = bits.ReverseBytes16(uint16(m.%s))\n",
-					*f.Tags.Offset,
-					f.Name,
-				),
-			)
+			fmt.Fprintf(&sb, "\tbuf[%d] = bits.ReverseBytes16(uint16(m.%s))\n",
+				*f.Tags.Offset,
+				f.Name)
 		} else {
-			sb.WriteString(fmt.Sprintf("\tbuf[%d] = bits.ReverseBytes16(m.%s)\n", *f.Tags.Offset, f.Name))
+			fmt.Fprintf(&sb, "\tbuf[%d] = bits.ReverseBytes16(m.%s)\n", *f.Tags.Offset, f.Name)
 		}
 	}
 
@@ -255,24 +235,18 @@ func (f FieldUint16) Unmarshaler() string {
 	switch *f.Tags.Encoding {
 	case BigEndian:
 		if f.IsCustomType {
-			sb.WriteString(
-				fmt.Sprintf("\tm.%s = %s(buf[%d])\n", f.Name, f.CustomType, *f.Tags.Offset),
-			)
+			fmt.Fprintf(&sb, "\tm.%s = %s(buf[%d])\n", f.Name, f.CustomType, *f.Tags.Offset)
 		} else {
-			sb.WriteString(fmt.Sprintf("\tm.%s = buf[%d]\n", f.Name, *f.Tags.Offset))
+			fmt.Fprintf(&sb, "\tm.%s = buf[%d]\n", f.Name, *f.Tags.Offset)
 		}
 	case LittleEndian:
 		if f.IsCustomType {
-			sb.WriteString(
-				fmt.Sprintf(
-					"\tm.%s = %s(bits.ReverseBytes16(buf[%d]))\n",
-					f.Name,
-					f.CustomType,
-					*f.Tags.Offset,
-				),
-			)
+			fmt.Fprintf(&sb, "\tm.%s = %s(bits.ReverseBytes16(buf[%d]))\n",
+				f.Name,
+				f.CustomType,
+				*f.Tags.Offset)
 		} else {
-			sb.WriteString(fmt.Sprintf("\tm.%s = bits.ReverseBytes16(buf[%d])\n", f.Name, *f.Tags.Offset))
+			fmt.Fprintf(&sb, "\tm.%s = bits.ReverseBytes16(buf[%d])\n", f.Name, *f.Tags.Offset)
 		}
 	}
 
@@ -290,15 +264,11 @@ func (f FieldInt16) Marshaler() string {
 
 	switch *f.Tags.Encoding {
 	case BigEndian:
-		sb.WriteString(fmt.Sprintf("\tbuf[%d] = uint16(m.%s)\n", *f.Tags.Offset, f.Name))
+		fmt.Fprintf(&sb, "\tbuf[%d] = uint16(m.%s)\n", *f.Tags.Offset, f.Name)
 	case LittleEndian:
-		sb.WriteString(
-			fmt.Sprintf(
-				"\tbuf[%d] = bits.ReverseBytes16(uint16(m.%s))\n",
-				*f.Tags.Offset,
-				f.Name,
-			),
-		)
+		fmt.Fprintf(&sb, "\tbuf[%d] = bits.ReverseBytes16(uint16(m.%s))\n",
+			*f.Tags.Offset,
+			f.Name)
 	}
 
 	return sb.String()
@@ -312,24 +282,20 @@ func (f FieldInt16) Unmarshaler() string {
 	switch *f.Tags.Encoding {
 	case BigEndian:
 		if f.IsCustomType {
-			sb.WriteString(
-				fmt.Sprintf("\tm.%s = %s(int16(buf[%d]))\n", f.Name, f.CustomType, *f.Tags.Offset),
-			)
+			fmt.Fprintf(&sb, "\tm.%s = %s(int16(buf[%d]))\n", f.Name, f.CustomType, *f.Tags.Offset)
 		} else {
-			sb.WriteString(fmt.Sprintf("\tm.%s = int16(buf[%d])\n", f.Name, *f.Tags.Offset))
+			fmt.Fprintf(&sb, "\tm.%s = int16(buf[%d])\n", f.Name, *f.Tags.Offset)
 		}
 	case LittleEndian:
 		if f.IsCustomType {
-			sb.WriteString(
-				fmt.Sprintf(
-					"\tm.%s = %s(bits.ReverseBytes16(buf[%d]))\n",
-					f.Name,
-					f.CustomType,
-					*f.Tags.Offset,
-				),
-			)
+			fmt.Fprintf(&sb, "\tm.%s = %s(bits.ReverseBytes16(buf[%d]))\n",
+				f.Name,
+				f.CustomType,
+				*f.Tags.Offset)
 		} else {
-			sb.WriteString(fmt.Sprintf("\tm.%s = int16(bits.ReverseBytes16(buf[%d]))\n", f.Name, *f.Tags.Offset))
+			fmt.Fprintf(&sb, "\tm.%s = int16(bits.ReverseBytes16(buf[%d]))\n",
+				f.Name,
+				*f.Tags.Offset)
 		}
 	}
 
@@ -347,23 +313,15 @@ func (f FieldUint32) Marshaler() string {
 
 	switch *f.Tags.Encoding {
 	case BigEndian:
-		sb.WriteString(fmt.Sprintf("\tbuf[%d] = uint16(m.%s)\n", *f.Tags.Offset, f.Name))
-		sb.WriteString(fmt.Sprintf("\tbuf[%d] = uint16(m.%s>>16)\n", *f.Tags.Offset+1, f.Name))
+		fmt.Fprintf(&sb, "\tbuf[%d] = uint16(m.%s)\n", *f.Tags.Offset, f.Name)
+		fmt.Fprintf(&sb, "\tbuf[%d] = uint16(m.%s>>16)\n", *f.Tags.Offset+1, f.Name)
 	case LittleEndian:
-		sb.WriteString(
-			fmt.Sprintf(
-				"\tbuf[%d] = bits.ReverseBytes16(uint16(m.%s))\n",
-				*f.Tags.Offset,
-				f.Name,
-			),
-		)
-		sb.WriteString(
-			fmt.Sprintf(
-				"\tbuf[%d] = bits.ReverseBytes16(uint16(m.%s>>16))\n",
-				*f.Tags.Offset+1,
-				f.Name,
-			),
-		)
+		fmt.Fprintf(&sb, "\tbuf[%d] = bits.ReverseBytes16(uint16(m.%s))\n",
+			*f.Tags.Offset,
+			f.Name)
+		fmt.Fprintf(&sb, "\tbuf[%d] = bits.ReverseBytes16(uint16(m.%s>>16))\n",
+			*f.Tags.Offset+1,
+			f.Name)
 	}
 
 	return sb.String()
@@ -377,40 +335,36 @@ func (f FieldUint32) Unmarshaler() string {
 	switch *f.Tags.Encoding {
 	case BigEndian:
 		if f.IsCustomType {
-			sb.WriteString(
-				fmt.Sprintf(
-					"\tm.%s = %s(buf[%d]) | %s(buf[%d]) << 16\n",
-					f.Name,
-					f.CustomType,
-					*f.Tags.Offset,
-					f.CustomType,
-					*f.Tags.Offset+1,
-				),
-			)
+			fmt.Fprintf(&sb, "\tm.%s = %s(buf[%d]) | %s(buf[%d]) << 16\n",
+				f.Name,
+				f.CustomType,
+				*f.Tags.Offset,
+				f.CustomType,
+				*f.Tags.Offset+1)
 		} else {
-			sb.WriteString(
-				fmt.Sprintf("\tm.%s = uint32(buf[%d]) | uint32(buf[%d]) << 16\n", f.Name, *f.Tags.Offset, *f.Tags.Offset+1),
-			)
+			fmt.Fprintf(&sb, "\tm.%s = uint32(buf[%d]) | uint32(buf[%d]) << 16\n",
+				f.Name,
+				*f.Tags.Offset,
+				*f.Tags.Offset+1)
 		}
 	case LittleEndian:
 		if f.IsCustomType {
-			sb.WriteString(
-				fmt.Sprintf(
-					"\tm.%s = %s(bits.ReverseBytes16(buf[%d])) | %s(bits.ReverseBytes16(buf[%d]))<<16\n",
-					f.Name,
-					f.CustomType,
-					*f.Tags.Offset,
-					f.CustomType,
-					*f.Tags.Offset+1,
-				),
+			fmt.Fprintf(
+				&sb,
+				"\tm.%s = %s(bits.ReverseBytes16(buf[%d])) | %s(bits.ReverseBytes16(buf[%d]))<<16\n",
+				f.Name,
+				f.CustomType,
+				*f.Tags.Offset,
+				f.CustomType,
+				*f.Tags.Offset+1,
 			)
 		} else {
-			sb.WriteString(
-				fmt.Sprintf("\tm.%s = uint32(bits.ReverseBytes16(buf[%d])) | uint32(bits.ReverseBytes16(buf[%d]))<<16\n",
-					f.Name,
-					*f.Tags.Offset,
-					*f.Tags.Offset+1,
-				),
+			fmt.Fprintf(
+				&sb,
+				"\tm.%s = uint32(bits.ReverseBytes16(buf[%d])) | uint32(bits.ReverseBytes16(buf[%d]))<<16\n",
+				f.Name,
+				*f.Tags.Offset,
+				*f.Tags.Offset+1,
 			)
 		}
 	}
@@ -429,23 +383,15 @@ func (f FieldInt32) Marshaler() string {
 
 	switch *f.Tags.Encoding {
 	case BigEndian:
-		sb.WriteString(fmt.Sprintf("\tbuf[%d] = uint16(m.%s)\n", *f.Tags.Offset, f.Name))
-		sb.WriteString(fmt.Sprintf("\tbuf[%d] = uint16(m.%s>>16)\n", *f.Tags.Offset+1, f.Name))
+		fmt.Fprintf(&sb, "\tbuf[%d] = uint16(m.%s)\n", *f.Tags.Offset, f.Name)
+		fmt.Fprintf(&sb, "\tbuf[%d] = uint16(m.%s>>16)\n", *f.Tags.Offset+1, f.Name)
 	case LittleEndian:
-		sb.WriteString(
-			fmt.Sprintf(
-				"\tbuf[%d] = bits.ReverseBytes16(uint16(m.%s))\n",
-				*f.Tags.Offset,
-				f.Name,
-			),
-		)
-		sb.WriteString(
-			fmt.Sprintf(
-				"\tbuf[%d] = bits.ReverseBytes16(uint16(m.%s>>16))\n",
-				*f.Tags.Offset+1,
-				f.Name,
-			),
-		)
+		fmt.Fprintf(&sb, "\tbuf[%d] = bits.ReverseBytes16(uint16(m.%s))\n",
+			*f.Tags.Offset,
+			f.Name)
+		fmt.Fprintf(&sb, "\tbuf[%d] = bits.ReverseBytes16(uint16(m.%s>>16))\n",
+			*f.Tags.Offset+1,
+			f.Name)
 	}
 
 	return sb.String()
@@ -459,40 +405,36 @@ func (f FieldInt32) Unmarshaler() string {
 	switch *f.Tags.Encoding {
 	case BigEndian:
 		if f.IsCustomType {
-			sb.WriteString(
-				fmt.Sprintf(
-					"\tm.%s = %s(buf[%d]) | %s(buf[%d]) << 16\n",
-					f.Name,
-					f.CustomType,
-					*f.Tags.Offset,
-					f.CustomType,
-					*f.Tags.Offset+1,
-				),
-			)
+			fmt.Fprintf(&sb, "\tm.%s = %s(buf[%d]) | %s(buf[%d]) << 16\n",
+				f.Name,
+				f.CustomType,
+				*f.Tags.Offset,
+				f.CustomType,
+				*f.Tags.Offset+1)
 		} else {
-			sb.WriteString(
-				fmt.Sprintf("\tm.%s = int32(buf[%d]) | int32(buf[%d]) << 16\n", f.Name, *f.Tags.Offset, *f.Tags.Offset+1),
-			)
+			fmt.Fprintf(&sb, "\tm.%s = int32(buf[%d]) | int32(buf[%d]) << 16\n",
+				f.Name,
+				*f.Tags.Offset,
+				*f.Tags.Offset+1)
 		}
 	case LittleEndian:
 		if f.IsCustomType {
-			sb.WriteString(
-				fmt.Sprintf(
-					"\tm.%s = %s(bits.ReverseBytes16(buf[%d])) | %s(bits.ReverseBytes16(buf[%d]))<<16\n",
-					f.Name,
-					f.CustomType,
-					*f.Tags.Offset,
-					f.CustomType,
-					*f.Tags.Offset+1,
-				),
+			fmt.Fprintf(
+				&sb,
+				"\tm.%s = %s(bits.ReverseBytes16(buf[%d])) | %s(bits.ReverseBytes16(buf[%d]))<<16\n",
+				f.Name,
+				f.CustomType,
+				*f.Tags.Offset,
+				f.CustomType,
+				*f.Tags.Offset+1,
 			)
 		} else {
-			sb.WriteString(
-				fmt.Sprintf("\tm.%s = int32(bits.ReverseBytes16(buf[%d])) | int32(bits.ReverseBytes16(buf[%d]))<<16\n",
-					f.Name,
-					*f.Tags.Offset,
-					*f.Tags.Offset+1,
-				),
+			fmt.Fprintf(
+				&sb,
+				"\tm.%s = int32(bits.ReverseBytes16(buf[%d])) | int32(bits.ReverseBytes16(buf[%d]))<<16\n",
+				f.Name,
+				*f.Tags.Offset,
+				*f.Tags.Offset+1,
 			)
 		}
 	}
@@ -511,39 +453,23 @@ func (f FieldUint64) Marshaler() string {
 
 	switch *f.Tags.Encoding {
 	case BigEndian:
-		sb.WriteString(fmt.Sprintf("\tbuf[%d] = uint16(m.%s)\n", *f.Tags.Offset, f.Name))
-		sb.WriteString(fmt.Sprintf("\tbuf[%d] = uint16(m.%s>>16)\n", *f.Tags.Offset+1, f.Name))
-		sb.WriteString(fmt.Sprintf("\tbuf[%d] = uint16(m.%s>>32)\n", *f.Tags.Offset+2, f.Name))
-		sb.WriteString(fmt.Sprintf("\tbuf[%d] = uint16(m.%s>>48)\n", *f.Tags.Offset+3, f.Name))
+		fmt.Fprintf(&sb, "\tbuf[%d] = uint16(m.%s)\n", *f.Tags.Offset, f.Name)
+		fmt.Fprintf(&sb, "\tbuf[%d] = uint16(m.%s>>16)\n", *f.Tags.Offset+1, f.Name)
+		fmt.Fprintf(&sb, "\tbuf[%d] = uint16(m.%s>>32)\n", *f.Tags.Offset+2, f.Name)
+		fmt.Fprintf(&sb, "\tbuf[%d] = uint16(m.%s>>48)\n", *f.Tags.Offset+3, f.Name)
 	case LittleEndian:
-		sb.WriteString(
-			fmt.Sprintf(
-				"\tbuf[%d] = bits.ReverseBytes16(uint16(m.%s))\n",
-				*f.Tags.Offset,
-				f.Name,
-			),
-		)
-		sb.WriteString(
-			fmt.Sprintf(
-				"\tbuf[%d] = bits.ReverseBytes16(uint16(m.%s>>16))\n",
-				*f.Tags.Offset+1,
-				f.Name,
-			),
-		)
-		sb.WriteString(
-			fmt.Sprintf(
-				"\tbuf[%d] = bits.ReverseBytes16(uint16(m.%s>>32))\n",
-				*f.Tags.Offset+2,
-				f.Name,
-			),
-		)
-		sb.WriteString(
-			fmt.Sprintf(
-				"\tbuf[%d] = bits.ReverseBytes16(uint16(m.%s>>48))\n",
-				*f.Tags.Offset+3,
-				f.Name,
-			),
-		)
+		fmt.Fprintf(&sb, "\tbuf[%d] = bits.ReverseBytes16(uint16(m.%s))\n",
+			*f.Tags.Offset,
+			f.Name)
+		fmt.Fprintf(&sb, "\tbuf[%d] = bits.ReverseBytes16(uint16(m.%s>>16))\n",
+			*f.Tags.Offset+1,
+			f.Name)
+		fmt.Fprintf(&sb, "\tbuf[%d] = bits.ReverseBytes16(uint16(m.%s>>32))\n",
+			*f.Tags.Offset+2,
+			f.Name)
+		fmt.Fprintf(&sb, "\tbuf[%d] = bits.ReverseBytes16(uint16(m.%s>>48))\n",
+			*f.Tags.Offset+3,
+			f.Name)
 	}
 
 	return sb.String()
@@ -557,59 +483,56 @@ func (f FieldUint64) Unmarshaler() string {
 	switch *f.Tags.Encoding {
 	case BigEndian:
 		if f.IsCustomType {
-			sb.WriteString(
-				fmt.Sprintf(
-					"\tm.%s = %s(buf[%d]) | %s(buf[%d]) << 16 | %s(buf[%d]) << 32 | %s(buf[%d]) << 48\n",
-					f.Name,
-					f.CustomType,
-					*f.Tags.Offset,
-					f.CustomType,
-					*f.Tags.Offset+1,
-					f.CustomType,
-					*f.Tags.Offset+2,
-					f.CustomType,
-					*f.Tags.Offset+3,
-				),
+			fmt.Fprintf(
+				&sb,
+				"\tm.%s = %s(buf[%d]) | %s(buf[%d]) << 16 | %s(buf[%d]) << 32 | %s(buf[%d]) << 48\n",
+				f.Name,
+				f.CustomType,
+				*f.Tags.Offset,
+				f.CustomType,
+				*f.Tags.Offset+1,
+				f.CustomType,
+				*f.Tags.Offset+2,
+				f.CustomType,
+				*f.Tags.Offset+3,
 			)
 		} else {
-			sb.WriteString(
-				fmt.Sprintf(
-					"\tm.%s = uint64(buf[%d]) | uint64(buf[%d]) << 16 | uint64(buf[%d]) << 32 | uint64(buf[%d]) << 48\n",
-					f.Name,
-					*f.Tags.Offset,
-					*f.Tags.Offset+1,
-					*f.Tags.Offset+2,
-					*f.Tags.Offset+3,
-				),
+			fmt.Fprintf(
+				&sb,
+				"\tm.%s = uint64(buf[%d]) | uint64(buf[%d]) << 16 | uint64(buf[%d]) << 32 | uint64(buf[%d]) << 48\n",
+				f.Name,
+				*f.Tags.Offset,
+				*f.Tags.Offset+1,
+				*f.Tags.Offset+2,
+				*f.Tags.Offset+3,
 			)
 		}
 	case LittleEndian:
 		if f.IsCustomType {
-			sb.WriteString(
-				//nolint:lll
-				fmt.Sprintf(
-					"\tm.%s = %s(bits.ReverseBytes16(buf[%d])) | %s(bits.ReverseBytes16(buf[%d]))<<16 | %s(bits.ReverseBytes16(buf[%d]))<<32 | %s(bits.ReverseBytes16(buf[%d]))<<48\n",
-					f.Name,
-					f.CustomType,
-					*f.Tags.Offset,
-					f.CustomType,
-					*f.Tags.Offset+1,
-					f.CustomType,
-					*f.Tags.Offset+2,
-					f.CustomType,
-					*f.Tags.Offset+3,
-				),
+			fmt.Fprintf(
+				&sb,
+				"\tm.%s = %s(bits.ReverseBytes16(buf[%d])) | %s(bits.ReverseBytes16(buf[%d]))<<16 | "+
+					"%s(bits.ReverseBytes16(buf[%d]))<<32 | %s(bits.ReverseBytes16(buf[%d]))<<48\n",
+				f.Name,
+				f.CustomType,
+				*f.Tags.Offset,
+				f.CustomType,
+				*f.Tags.Offset+1,
+				f.CustomType,
+				*f.Tags.Offset+2,
+				f.CustomType,
+				*f.Tags.Offset+3,
 			)
 		} else {
-			sb.WriteString(
-				//nolint:lll
-				fmt.Sprintf("\tm.%s = uint64(bits.ReverseBytes16(buf[%d])) | uint64(bits.ReverseBytes16(buf[%d]))<<16 | uint64(bits.ReverseBytes16(buf[%d]))<<32 | uint64(bits.ReverseBytes16(buf[%d]))<<48\n",
-					f.Name,
-					*f.Tags.Offset,
-					*f.Tags.Offset+1,
-					*f.Tags.Offset+2,
-					*f.Tags.Offset+3,
-				),
+			fmt.Fprintf(
+				&sb,
+				"\tm.%s = uint64(bits.ReverseBytes16(buf[%d])) | uint64(bits.ReverseBytes16(buf[%d]))<<16 | "+
+					"uint64(bits.ReverseBytes16(buf[%d]))<<32 | uint64(bits.ReverseBytes16(buf[%d]))<<48\n",
+				f.Name,
+				*f.Tags.Offset,
+				*f.Tags.Offset+1,
+				*f.Tags.Offset+2,
+				*f.Tags.Offset+3,
 			)
 		}
 	}
@@ -628,39 +551,23 @@ func (f FieldInt64) Marshaler() string {
 
 	switch *f.Tags.Encoding {
 	case BigEndian:
-		sb.WriteString(fmt.Sprintf("\tbuf[%d] = uint16(m.%s)\n", *f.Tags.Offset, f.Name))
-		sb.WriteString(fmt.Sprintf("\tbuf[%d] = uint16(m.%s>>16)\n", *f.Tags.Offset+1, f.Name))
-		sb.WriteString(fmt.Sprintf("\tbuf[%d] = uint16(m.%s>>32)\n", *f.Tags.Offset+2, f.Name))
-		sb.WriteString(fmt.Sprintf("\tbuf[%d] = uint16(m.%s>>48)\n", *f.Tags.Offset+3, f.Name))
+		fmt.Fprintf(&sb, "\tbuf[%d] = uint16(m.%s)\n", *f.Tags.Offset, f.Name)
+		fmt.Fprintf(&sb, "\tbuf[%d] = uint16(m.%s>>16)\n", *f.Tags.Offset+1, f.Name)
+		fmt.Fprintf(&sb, "\tbuf[%d] = uint16(m.%s>>32)\n", *f.Tags.Offset+2, f.Name)
+		fmt.Fprintf(&sb, "\tbuf[%d] = uint16(m.%s>>48)\n", *f.Tags.Offset+3, f.Name)
 	case LittleEndian:
-		sb.WriteString(
-			fmt.Sprintf(
-				"\tbuf[%d] = bits.ReverseBytes16(uint16(m.%s))\n",
-				*f.Tags.Offset,
-				f.Name,
-			),
-		)
-		sb.WriteString(
-			fmt.Sprintf(
-				"\tbuf[%d] = bits.ReverseBytes16(uint16(m.%s>>16))\n",
-				*f.Tags.Offset+1,
-				f.Name,
-			),
-		)
-		sb.WriteString(
-			fmt.Sprintf(
-				"\tbuf[%d] = bits.ReverseBytes16(uint16(m.%s>>32))\n",
-				*f.Tags.Offset+2,
-				f.Name,
-			),
-		)
-		sb.WriteString(
-			fmt.Sprintf(
-				"\tbuf[%d] = bits.ReverseBytes16(uint16(m.%s>>48))\n",
-				*f.Tags.Offset+3,
-				f.Name,
-			),
-		)
+		fmt.Fprintf(&sb, "\tbuf[%d] = bits.ReverseBytes16(uint16(m.%s))\n",
+			*f.Tags.Offset,
+			f.Name)
+		fmt.Fprintf(&sb, "\tbuf[%d] = bits.ReverseBytes16(uint16(m.%s>>16))\n",
+			*f.Tags.Offset+1,
+			f.Name)
+		fmt.Fprintf(&sb, "\tbuf[%d] = bits.ReverseBytes16(uint16(m.%s>>32))\n",
+			*f.Tags.Offset+2,
+			f.Name)
+		fmt.Fprintf(&sb, "\tbuf[%d] = bits.ReverseBytes16(uint16(m.%s>>48))\n",
+			*f.Tags.Offset+3,
+			f.Name)
 	}
 
 	return sb.String()
@@ -674,59 +581,56 @@ func (f FieldInt64) Unmarshaler() string {
 	switch *f.Tags.Encoding {
 	case BigEndian:
 		if f.IsCustomType {
-			sb.WriteString(
-				fmt.Sprintf(
-					"\tm.%s = %s(buf[%d]) | %s(buf[%d]) << 16 | %s(buf[%d]) << 32 | %s(buf[%d]) << 48\n",
-					f.Name,
-					f.CustomType,
-					*f.Tags.Offset,
-					f.CustomType,
-					*f.Tags.Offset+1,
-					f.CustomType,
-					*f.Tags.Offset+2,
-					f.CustomType,
-					*f.Tags.Offset+3,
-				),
+			fmt.Fprintf(
+				&sb,
+				"\tm.%s = %s(buf[%d]) | %s(buf[%d]) << 16 | %s(buf[%d]) << 32 | %s(buf[%d]) << 48\n",
+				f.Name,
+				f.CustomType,
+				*f.Tags.Offset,
+				f.CustomType,
+				*f.Tags.Offset+1,
+				f.CustomType,
+				*f.Tags.Offset+2,
+				f.CustomType,
+				*f.Tags.Offset+3,
 			)
 		} else {
-			sb.WriteString(
-				fmt.Sprintf(
-					"\tm.%s = int64(buf[%d]) | int64(buf[%d]) << 16 | int64(buf[%d]) << 32 | int64(buf[%d]) << 48\n",
-					f.Name,
-					*f.Tags.Offset,
-					*f.Tags.Offset+1,
-					*f.Tags.Offset+2,
-					*f.Tags.Offset+3,
-				),
+			fmt.Fprintf(
+				&sb,
+				"\tm.%s = int64(buf[%d]) | int64(buf[%d]) << 16 | int64(buf[%d]) << 32 | int64(buf[%d]) << 48\n",
+				f.Name,
+				*f.Tags.Offset,
+				*f.Tags.Offset+1,
+				*f.Tags.Offset+2,
+				*f.Tags.Offset+3,
 			)
 		}
 	case LittleEndian:
 		if f.IsCustomType {
-			sb.WriteString(
-				//nolint:lll
-				fmt.Sprintf(
-					"\tm.%s = %s(bits.ReverseBytes16(buf[%d])) | %s(bits.ReverseBytes16(buf[%d]))<<16 | %s(bits.ReverseBytes16(buf[%d]))<<32 | %s(bits.ReverseBytes16(buf[%d]))<<48\n",
-					f.Name,
-					f.CustomType,
-					*f.Tags.Offset,
-					f.CustomType,
-					*f.Tags.Offset+1,
-					f.CustomType,
-					*f.Tags.Offset+2,
-					f.CustomType,
-					*f.Tags.Offset+3,
-				),
+			fmt.Fprintf(
+				&sb,
+				"\tm.%s = %s(bits.ReverseBytes16(buf[%d])) | %s(bits.ReverseBytes16(buf[%d]))<<16 | "+
+					"%s(bits.ReverseBytes16(buf[%d]))<<32 | %s(bits.ReverseBytes16(buf[%d]))<<48\n",
+				f.Name,
+				f.CustomType,
+				*f.Tags.Offset,
+				f.CustomType,
+				*f.Tags.Offset+1,
+				f.CustomType,
+				*f.Tags.Offset+2,
+				f.CustomType,
+				*f.Tags.Offset+3,
 			)
 		} else {
-			sb.WriteString(
-				//nolint:lll
-				fmt.Sprintf("\tm.%s = int64(bits.ReverseBytes16(buf[%d])) | int64(bits.ReverseBytes16(buf[%d]))<<16 | int64(bits.ReverseBytes16(buf[%d]))<<32 | int64(bits.ReverseBytes16(buf[%d]))<<48\n",
-					f.Name,
-					*f.Tags.Offset,
-					*f.Tags.Offset+1,
-					*f.Tags.Offset+2,
-					*f.Tags.Offset+3,
-				),
+			fmt.Fprintf(
+				&sb,
+				"\tm.%s = int64(bits.ReverseBytes16(buf[%d])) | int64(bits.ReverseBytes16(buf[%d]))<<16 | "+
+					"int64(bits.ReverseBytes16(buf[%d]))<<32 | int64(bits.ReverseBytes16(buf[%d]))<<48\n",
+				f.Name,
+				*f.Tags.Offset,
+				*f.Tags.Offset+1,
+				*f.Tags.Offset+2,
+				*f.Tags.Offset+3,
 			)
 		}
 	}

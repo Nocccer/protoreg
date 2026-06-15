@@ -115,11 +115,11 @@ func (g *ProtoRegGen) Imports() string {
 	thirdparty = slices.Compact(thirdparty)
 
 	for _, imp := range std {
-		sb.WriteString(fmt.Sprintf("\t\"%s\"\n", imp))
+		fmt.Fprintf(&sb, "\t\"%s\"\n", imp)
 	}
 	sb.WriteString("\n")
 	for _, imp := range thirdparty {
-		sb.WriteString(fmt.Sprintf("\t\"%s\"\n", imp))
+		fmt.Fprintf(&sb, "\t\"%s\"\n", imp)
 	}
 	sb.WriteString(")\n\n")
 
@@ -127,6 +127,7 @@ func (g *ProtoRegGen) Imports() string {
 }
 
 func (g *ProtoRegGen) WriteToFile(filename string) error {
+	//nolint: gosec
 	f, err := os.Create(filename)
 	if err != nil {
 		return err
@@ -140,7 +141,7 @@ func (g *ProtoRegGen) WriteToFile(filename string) error {
 	}
 
 	// Write package declaration
-	_, err = f.WriteString(fmt.Sprintf("package %s\n\n", g.pkg))
+	_, err = fmt.Fprintf(f, "package %s\n\n", g.pkg)
 	if err != nil {
 		return err
 	}
@@ -234,8 +235,8 @@ func (g *ProtoRegGen) genFromStruct(
 	if gen != GenModeUnmarshal {
 		g.log.Debug("generate marshaler")
 
-		sb.WriteString(fmt.Sprintf("func (m %s) Marshal() ([]uint16, error) {\n", name))
-		sb.WriteString(fmt.Sprintf("\tbuf := make([]uint16, %d)\n", length))
+		fmt.Fprintf(&sb, "func (m %s) Marshal() ([]uint16, error) {\n", name)
+		fmt.Fprintf(&sb, "\tbuf := make([]uint16, %d)\n", length)
 
 		var sbFields strings.Builder
 		for _, gen := range gens {
@@ -266,7 +267,7 @@ func (g *ProtoRegGen) genFromStruct(
 	if gen != GenModeMarshal {
 		g.log.Debug("generate unmarshaler")
 
-		sb.WriteString(fmt.Sprintf("func (m *%s) Unmarshal(buf []uint16) error {\n", name))
+		fmt.Fprintf(&sb, "func (m *%s) Unmarshal(buf []uint16) error {\n", name)
 
 		var sbFields strings.Builder
 		for _, gen := range gens {

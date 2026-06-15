@@ -30,12 +30,12 @@ func (g *ProtoRegGen) newStringGen(name string, typ types.Type, tags Tags) (NewG
 	}
 
 	if field.Tags.CharEncoding == nil {
-		field.Tags.CharEncoding = ptrTo(CharEncodingASCII)
+		field.Tags.CharEncoding = new(CharEncodingASCII)
 	}
 
 	if *field.Tags.Char == Char8 && *field.Tags.CharEncoding == CharEncodingUTF8 {
 		return NewGenResult{}, fmt.Errorf(
-			`you can't set "charencoding" to %q if "char" is %q, because utf8 needs atleast two bytes for each character.`,
+			`you can't set "charencoding" to %q if "char" is %q, because utf8 needs atleast two bytes for each character`,
 			CharEncodingUTF8,
 			Char8,
 		)
@@ -68,64 +68,44 @@ func (f FieldString) Marshaler() string {
 
 	switch *f.Tags.Char {
 	case Char8:
-		sb.WriteString(fmt.Sprintf("\tlength := len(m.%s)\n", f.Name))
+		fmt.Fprintf(&sb, "\tlength := len(m.%s)\n", f.Name)
 		sb.WriteString("\tfor i := 0; i < length; i+=2 {\n")
-		sb.WriteString(fmt.Sprintf("\t\tif i >= %d {break}\n", *f.Tags.Size*2))
-		sb.WriteString(fmt.Sprintf("\t\tb1 := m.%s[i]\n", f.Name))
+		fmt.Fprintf(&sb, "\t\tif i >= %d {break}\n", *f.Tags.Size*2)
+		fmt.Fprintf(&sb, "\t\tb1 := m.%s[i]\n", f.Name)
 		sb.WriteString("\t\tvar b2 byte\n")
-		sb.WriteString(fmt.Sprintf("\t\tif i+1 < length {b2 = m.%s[i+1]}\n", f.Name))
+		fmt.Fprintf(&sb, "\t\tif i+1 < length {b2 = m.%s[i+1]}\n", f.Name)
 		if *f.Tags.Encoding == BigEndian {
-			sb.WriteString(
-				fmt.Sprintf(
-					"\t\tbuf[%d+i/2] = uint16(b1) | uint16(b2)<<8\n",
-					*f.Tags.Offset,
-				),
-			)
+			fmt.Fprintf(&sb, "\t\tbuf[%d+i/2] = uint16(b1) | uint16(b2)<<8\n",
+				*f.Tags.Offset)
 		} else {
-			sb.WriteString(
-				fmt.Sprintf(
-					"\t\tbuf[%d+i/2] = uint16(b1)<<8 | uint16(b2)\n",
-					*f.Tags.Offset,
-				),
-			)
+			fmt.Fprintf(&sb, "\t\tbuf[%d+i/2] = uint16(b1)<<8 | uint16(b2)\n",
+				*f.Tags.Offset)
 		}
 		sb.WriteString("\t}\n")
 	case Char16:
 		if *f.Tags.CharEncoding == CharEncodingASCII {
-			sb.WriteString(fmt.Sprintf("\tfor i := 0; i < len(m.%s); i++ {\n", f.Name))
-			sb.WriteString(fmt.Sprintf("\t\tif i >= %d {break}\n", *f.Tags.Size))
+			fmt.Fprintf(&sb, "\tfor i := 0; i < len(m.%s); i++ {\n", f.Name)
+			fmt.Fprintf(&sb, "\t\tif i >= %d {break}\n", *f.Tags.Size)
 			shift := ""
 			if *f.Tags.Encoding == LittleEndian {
 				shift = "<<8"
 			}
 
-			sb.WriteString(
-				fmt.Sprintf(
-					"\t\tbuf[%d+i] = uint16(m.%s[i])%s\n",
-					*f.Tags.Offset,
-					f.Name,
-					shift,
-				),
-			)
+			fmt.Fprintf(&sb, "\t\tbuf[%d+i] = uint16(m.%s[i])%s\n",
+				*f.Tags.Offset,
+				f.Name,
+				shift)
 		} else {
 			sb.WriteString("\ti = 0\n")
-			sb.WriteString(fmt.Sprintf("\tfor _, r := range m.%s {\n", f.Name))
-			sb.WriteString(fmt.Sprintf("\t\tif i >= %d {break}\n", *f.Tags.Size))
+			fmt.Fprintf(&sb, "\tfor _, r := range m.%s {\n", f.Name)
+			fmt.Fprintf(&sb, "\t\tif i >= %d {break}\n", *f.Tags.Size)
 
 			if *f.Tags.Encoding == LittleEndian {
-				sb.WriteString(
-					fmt.Sprintf(
-						"\t\tbuf[%d+i] = uint16(r>>8) | uint16(r<<8)\n",
-						*f.Tags.Offset,
-					),
-				)
+				fmt.Fprintf(&sb, "\t\tbuf[%d+i] = uint16(r>>8) | uint16(r<<8)\n",
+					*f.Tags.Offset)
 			} else {
-				sb.WriteString(
-					fmt.Sprintf(
-						"\t\tbuf[%d+i] = uint16(r)\n",
-						*f.Tags.Offset,
-					),
-				)
+				fmt.Fprintf(&sb, "\t\tbuf[%d+i] = uint16(r)\n",
+					*f.Tags.Offset)
 			}
 
 			sb.WriteString("\t\ti++\n")
@@ -144,14 +124,10 @@ func (f FieldString) Unmarshaler() string {
 
 	switch *f.Tags.Char {
 	case Char8:
-		sb.WriteString(fmt.Sprintf("\tbytes = make([]byte, %d)\n", *f.Tags.Size*2))
-		sb.WriteString(
-			fmt.Sprintf(
-				"\tfor i, v := range buf[%d:%d] {\n",
-				*f.Tags.Offset,
-				*f.Tags.Offset+*f.Tags.Size,
-			),
-		)
+		fmt.Fprintf(&sb, "\tbytes = make([]byte, %d)\n", *f.Tags.Size*2)
+		fmt.Fprintf(&sb, "\tfor i, v := range buf[%d:%d] {\n",
+			*f.Tags.Offset,
+			*f.Tags.Offset+*f.Tags.Size)
 		if *f.Tags.Encoding == BigEndian {
 			sb.WriteString("\t\tlow := byte(v)\n")
 		} else {
@@ -167,34 +143,26 @@ func (f FieldString) Unmarshaler() string {
 		sb.WriteString("\t\tif high == 0 {bytes = bytes[:i*2+1];break} // stop on empty char\n")
 		sb.WriteString("\t\tbytes[i*2+1] = high\n")
 		sb.WriteString("\t}\n")
-		sb.WriteString(fmt.Sprintf("\tm.%s = string(bytes)\n", f.Name))
+		fmt.Fprintf(&sb, "\tm.%s = string(bytes)\n", f.Name)
 	case Char16:
 		if *f.Tags.CharEncoding == CharEncodingASCII {
-			sb.WriteString(fmt.Sprintf("\tbytes = make([]byte, %d)\n", *f.Tags.Size))
-			sb.WriteString(
-				fmt.Sprintf(
-					"\tfor i, v := range buf[%d:%d] {\n",
-					*f.Tags.Offset,
-					*f.Tags.Offset+*f.Tags.Size,
-				),
-			)
+			fmt.Fprintf(&sb, "\tbytes = make([]byte, %d)\n", *f.Tags.Size)
+			fmt.Fprintf(&sb, "\tfor i, v := range buf[%d:%d] {\n",
+				*f.Tags.Offset,
+				*f.Tags.Offset+*f.Tags.Size)
 			sb.WriteString("\t\tif v == 0 {bytes = bytes[:i];break} // stop on empty char\n")
 			shift := ""
 			if *f.Tags.Encoding == LittleEndian {
 				shift = ">>8"
 			}
-			sb.WriteString(fmt.Sprintf("\t\tbytes[i] = byte(v%s)\n", shift))
+			fmt.Fprintf(&sb, "\t\tbytes[i] = byte(v%s)\n", shift)
 			sb.WriteString("\t}\n")
-			sb.WriteString(fmt.Sprintf("\tm.%s = string(bytes)\n", f.Name))
+			fmt.Fprintf(&sb, "\tm.%s = string(bytes)\n", f.Name)
 		} else {
-			sb.WriteString(fmt.Sprintf("\trunes = make([]rune, %d)\n", *f.Tags.Size))
-			sb.WriteString(
-				fmt.Sprintf(
-					"\tfor i, v := range buf[%d:%d] {\n",
-					*f.Tags.Offset,
-					*f.Tags.Offset+*f.Tags.Size,
-				),
-			)
+			fmt.Fprintf(&sb, "\trunes = make([]rune, %d)\n", *f.Tags.Size)
+			fmt.Fprintf(&sb, "\tfor i, v := range buf[%d:%d] {\n",
+				*f.Tags.Offset,
+				*f.Tags.Offset+*f.Tags.Size)
 			sb.WriteString("\t\tif v == 0 {runes = runes[:i];break} // stop on empty char\n")
 			if *f.Tags.Encoding == LittleEndian {
 				sb.WriteString("\t\trunes[i] = rune(v>>8) | rune(v<<8)\n")
@@ -202,7 +170,7 @@ func (f FieldString) Unmarshaler() string {
 				sb.WriteString("\t\trunes[i] = rune(v)\n")
 			}
 			sb.WriteString("\t}\n")
-			sb.WriteString(fmt.Sprintf("\tm.%s = string(runes)\n", f.Name))
+			fmt.Fprintf(&sb, "\tm.%s = string(runes)\n", f.Name)
 		}
 	}
 

@@ -94,9 +94,9 @@ type Tags struct {
 
 func extractTags(tagStr string) (Tags, error) {
 	var t Tags
-	tags := strings.Split(tagStr, ",")
+	tags := strings.SplitSeq(tagStr, ",")
 
-	for _, tag := range tags {
+	for tag := range tags {
 		kv := strings.Split(tag, "=")
 
 		if len(kv) != 2 {
@@ -105,12 +105,12 @@ func extractTags(tagStr string) (Tags, error) {
 
 		switch kv[0] {
 		case "encoding":
-			t.Encoding = ptrTo(Encoding(kv[1]))
+			t.Encoding = new(Encoding(kv[1]))
 			if err := t.Encoding.Validate(); err != nil {
 				return Tags{}, err
 			}
 		case "wordorder":
-			t.WordOrder = ptrTo(WordOrder(kv[1]))
+			t.WordOrder = new(WordOrder(kv[1]))
 			if err := t.WordOrder.Validate(); err != nil {
 				return Tags{}, err
 			}
@@ -127,17 +127,17 @@ func extractTags(tagStr string) (Tags, error) {
 			}
 			t.Size = &size
 		case "char":
-			t.Char = ptrTo(Char(kv[1]))
+			t.Char = new(Char(kv[1]))
 			if err := t.Char.Validate(); err != nil {
 				return Tags{}, err
 			}
 		case "charencoding":
-			t.CharEncoding = ptrTo(CharEncoding(kv[1]))
+			t.CharEncoding = new(CharEncoding(kv[1]))
 			if err := t.CharEncoding.Validate(); err != nil {
 				return Tags{}, err
 			}
 		case "byte":
-			t.Byte = ptrTo(Byte(kv[1]))
+			t.Byte = new(Byte(kv[1]))
 			if err := t.Byte.Validate(); err != nil {
 				return Tags{}, err
 			}

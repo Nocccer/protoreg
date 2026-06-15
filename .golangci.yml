@@ -7,7 +7,15 @@ linters:
     - sloglint
     - copyloopvar
     - gosec
+    - tagalign
     - testifylint
+
+  exclusions:
+    rules:
+      - linters:
+          - errcheck
+        source: "^.*defer.*$"
+      
 
 formatters:
   enable:

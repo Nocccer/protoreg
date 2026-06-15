@@ -7,10 +7,6 @@ import (
 	"strings"
 )
 
-func ptrTo[T any](v T) *T {
-	return &v
-}
-
 func splitFunc[S ~[]E, E any](s S, f func(E) bool) (a S, b S) {
 	for _, v := range s {
 		if f(v) {
