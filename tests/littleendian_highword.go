@@ -1,29 +1,71 @@
 package tests
 
-import "github.com/Nocccer/protoreg/tests/sub"
+import "github.com/Nocccer/protoreg/tests/extern"
 
-//go:generate go run ../cmd/main.go -type=LittleEndianHighWord -v
+//go:generate go run ../cmd/main.go -type=LittleEndianHighWord,LittleEndianHighWordAllCustom,LittleEndianHighWordAllCustomExtern -v
 
 type LittleEndianHighWord struct {
 	_             struct{} `protoreg:"encoding=little"`
 	Ignored       uint16
-	Uint8Low      uint8           `protoreg:"offset=0,byte=low"`
-	Uint8High     uint8           `protoreg:"offset=0,byte=high"`
-	ByteLow       byte            `protoreg:"offset=1,byte=low"`
-	ByteHigh      byte            `protoreg:"offset=1,byte=high"`
-	Int8Low       int8            `protoreg:"offset=2,byte=low"`
-	Int8High      int8            `protoreg:"offset=2,byte=high"`
-	Uint16        uint16          `protoreg:"offset=3"`
-	Int16         int16           `protoreg:"offset=4"`
-	Uint32        uint32          `protoreg:"offset=5"`
-	Int32         int32           `protoreg:"offset=7"`
-	Uint64        uint64          `protoreg:"offset=9"`
-	Int64         int64           `protoreg:"offset=13"`
-	Float32       float32         `protoreg:"offset=17"`
-	Float64       float64         `protoreg:"offset=21"`
-	StringASCII8  string          `protoreg:"offset=25,size=9,char=8"`
-	StringASCII16 string          `protoreg:"offset=34,size=9,char=16"`
-	StringUTF816  string          `protoreg:"offset=43,size=9,char=16,charencoding=utf8"`
-	CustomUint16  CustomUint16    `protoreg:"offset=52"`
-	CustomInt16   sub.CustomInt16 `protoreg:"offset=53"`
+	Uint8Low      uint8   `protoreg:"offset=0,byte=low"`
+	Uint8High     uint8   `protoreg:"offset=0,byte=high"`
+	ByteLow       byte    `protoreg:"offset=1,byte=low"`
+	ByteHigh      byte    `protoreg:"offset=1,byte=high"`
+	Int8Low       int8    `protoreg:"offset=2,byte=low"`
+	Int8High      int8    `protoreg:"offset=2,byte=high"`
+	Uint16        uint16  `protoreg:"offset=3"`
+	Int16         int16   `protoreg:"offset=4"`
+	Uint32        uint32  `protoreg:"offset=5"`
+	Int32         int32   `protoreg:"offset=7"`
+	Uint64        uint64  `protoreg:"offset=9"`
+	Int64         int64   `protoreg:"offset=13"`
+	Float32       float32 `protoreg:"offset=17"`
+	Float64       float64 `protoreg:"offset=21"`
+	StringASCII8  string  `protoreg:"offset=25,size=9,char=8"`
+	StringASCII16 string  `protoreg:"offset=34,size=9,char=16"`
+	StringUTF816  string  `protoreg:"offset=43,size=9,char=16,charencoding=utf8"`
+}
+
+type LittleEndianHighWordAllCustom struct {
+	_             struct{} `protoreg:"encoding=little"`
+	Ignored       CustomUint16
+	Uint8Low      CustomUint8   `protoreg:"offset=0,byte=low"`
+	Uint8High     CustomUint8   `protoreg:"offset=0,byte=high"`
+	ByteLow       CustomByte    `protoreg:"offset=1,byte=low"`
+	ByteHigh      CustomByte    `protoreg:"offset=1,byte=high"`
+	Int8Low       CustomInt8    `protoreg:"offset=2,byte=low"`
+	Int8High      CustomInt8    `protoreg:"offset=2,byte=high"`
+	Uint16        CustomUint16  `protoreg:"offset=3"`
+	Int16         CustomInt16   `protoreg:"offset=4"`
+	Uint32        CustomUint32  `protoreg:"offset=5"`
+	Int32         CustomInt32   `protoreg:"offset=7"`
+	Uint64        CustomUint64  `protoreg:"offset=9"`
+	Int64         CustomInt64   `protoreg:"offset=13"`
+	Float32       CustomFloat32 `protoreg:"offset=17"`
+	Float64       CustomFloat64 `protoreg:"offset=21"`
+	StringASCII8  CustomString  `protoreg:"offset=25,size=9,char=8"`
+	StringASCII16 CustomString  `protoreg:"offset=34,size=9,char=16"`
+	StringUTF816  CustomString  `protoreg:"offset=43,size=9,char=16,charencoding=utf8"`
+}
+
+type LittleEndianHighWordAllCustomExtern struct {
+	_             struct{} `protoreg:"encoding=little"`
+	Ignored       extern.CustomUint16
+	Uint8Low      extern.CustomUint8   `protoreg:"offset=0,byte=low"`
+	Uint8High     extern.CustomUint8   `protoreg:"offset=0,byte=high"`
+	ByteLow       extern.CustomByte    `protoreg:"offset=1,byte=low"`
+	ByteHigh      extern.CustomByte    `protoreg:"offset=1,byte=high"`
+	Int8Low       extern.CustomInt8    `protoreg:"offset=2,byte=low"`
+	Int8High      extern.CustomInt8    `protoreg:"offset=2,byte=high"`
+	Uint16        extern.CustomUint16  `protoreg:"offset=3"`
+	Int16         extern.CustomInt16   `protoreg:"offset=4"`
+	Uint32        extern.CustomUint32  `protoreg:"offset=5"`
+	Int32         extern.CustomInt32   `protoreg:"offset=7"`
+	Uint64        extern.CustomUint64  `protoreg:"offset=9"`
+	Int64         extern.CustomInt64   `protoreg:"offset=13"`
+	Float32       extern.CustomFloat32 `protoreg:"offset=17"`
+	Float64       extern.CustomFloat64 `protoreg:"offset=21"`
+	StringASCII8  extern.CustomString  `protoreg:"offset=25,size=9,char=8"`
+	StringASCII16 extern.CustomString  `protoreg:"offset=34,size=9,char=16"`
+	StringUTF816  extern.CustomString  `protoreg:"offset=43,size=9,char=16,charencoding=utf8"`
 }

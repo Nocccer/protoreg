@@ -142,8 +142,6 @@ func (f FieldString) Unmarshaler() string {
 		}
 		sb.WriteString("\t\tif high == 0 {bytes = bytes[:i*2+1];break} // stop on empty char\n")
 		sb.WriteString("\t\tbytes[i*2+1] = high\n")
-		sb.WriteString("\t}\n")
-		fmt.Fprintf(&sb, "\tm.%s = string(bytes)\n", f.Name)
 	case Char16:
 		if *f.Tags.CharEncoding == CharEncodingASCII {
 			fmt.Fprintf(&sb, "\tbytes = make([]byte, %d)\n", *f.Tags.Size)
@@ -156,8 +154,6 @@ func (f FieldString) Unmarshaler() string {
 				shift = ">>8"
 			}
 			fmt.Fprintf(&sb, "\t\tbytes[i] = byte(v%s)\n", shift)
-			sb.WriteString("\t}\n")
-			fmt.Fprintf(&sb, "\tm.%s = string(bytes)\n", f.Name)
 		} else {
 			fmt.Fprintf(&sb, "\trunes = make([]rune, %d)\n", *f.Tags.Size)
 			fmt.Fprintf(&sb, "\tfor i, v := range buf[%d:%d] {\n",
@@ -169,9 +165,18 @@ func (f FieldString) Unmarshaler() string {
 			} else {
 				sb.WriteString("\t\trunes[i] = rune(v)\n")
 			}
-			sb.WriteString("\t}\n")
-			fmt.Fprintf(&sb, "\tm.%s = string(runes)\n", f.Name)
 		}
+	}
+
+	varStr := "bytes"
+	if *f.Tags.CharEncoding != CharEncodingASCII {
+		varStr = "runes"
+	}
+	sb.WriteString("\t}\n")
+	if f.IsCustomType {
+		fmt.Fprintf(&sb, "\tm.%s = %s(%s)\n", f.Name, f.CustomType, varStr)
+	} else {
+		fmt.Fprintf(&sb, "\tm.%s = string(%s)\n", f.Name, varStr)
 	}
 
 	return sb.String()

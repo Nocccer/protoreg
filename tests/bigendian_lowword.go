@@ -2,9 +2,10 @@ package tests
 
 import "github.com/Nocccer/protoreg/tests/extern"
 
-//go:generate go run ../cmd/main.go -type=BigEndianHighWord,BigEndianHighWordAllCustom,BigEndianHighWordAllCustomExtern -v
+//go:generate go run ../cmd/main.go -type=BigEndianLowWord,BigEndianLowWordAllCustom,BigEndianLowWordAllCustomExtern -v
 
-type BigEndianHighWord struct {
+type BigEndianLowWord struct {
+	_             struct{} `protoreg:"wordorder=low"`
 	Ignored       uint16
 	Uint8Low      uint8   `protoreg:"offset=0,byte=low"`
 	Uint8High     uint8   `protoreg:"offset=0,byte=high"`
@@ -25,7 +26,8 @@ type BigEndianHighWord struct {
 	StringUTF816  string  `protoreg:"offset=43,size=9,char=16,charencoding=utf8"`
 }
 
-type BigEndianHighWordAllCustom struct {
+type BigEndianLowWordAllCustom struct {
+	_             struct{} `protoreg:"wordorder=low"`
 	Ignored       CustomUint16
 	Uint8Low      CustomUint8   `protoreg:"offset=0,byte=low"`
 	Uint8High     CustomUint8   `protoreg:"offset=0,byte=high"`
@@ -46,7 +48,8 @@ type BigEndianHighWordAllCustom struct {
 	StringUTF816  CustomString  `protoreg:"offset=43,size=9,char=16,charencoding=utf8"`
 }
 
-type BigEndianHighWordAllCustomExtern struct {
+type BigEndianLowWordAllCustomExtern struct {
+	_             struct{} `protoreg:"wordorder=low"`
 	Ignored       extern.CustomUint16
 	Uint8Low      extern.CustomUint8   `protoreg:"offset=0,byte=low"`
 	Uint8High     extern.CustomUint8   `protoreg:"offset=0,byte=high"`

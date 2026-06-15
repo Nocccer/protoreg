@@ -19,9 +19,9 @@ func splitFunc[S ~[]E, E any](s S, f func(E) bool) (a S, b S) {
 	return a, b
 }
 
-func extractProtoRegTag(tagStr string) (string, bool) {
+func extractTagByKey(tagStr string, key string) (string, bool) {
 	tags := strings.Trim(tagStr, "`")
-	return reflect.StructTag(tags).Lookup("protoreg")
+	return reflect.StructTag(tags).Lookup(key)
 }
 
 func (g *ProtoRegGen) extractCustomType(typePath string) string {

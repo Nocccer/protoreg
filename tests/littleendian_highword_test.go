@@ -4,12 +4,13 @@ import (
 	"testing"
 
 	"github.com/Nocccer/protoreg/tests"
-	"github.com/Nocccer/protoreg/tests/sub"
 	"github.com/stretchr/testify/suite"
 )
 
 func TestLittleEndianHighWord(t *testing.T) {
 	suite.Run(t, new(LittleEndianHighWordTestSuite))
+	suite.Run(t, new(LittleEndianHighWordAllCustomTestSuite))
+	suite.Run(t, new(LittleEndianHighWordAllCustomExternTestSuite))
 }
 
 type LittleEndianHighWordTestSuite struct {
@@ -37,8 +38,6 @@ func (s *LittleEndianHighWordTestSuite) SetupTest() {
 		StringASCII8:  "TestData1",
 		StringASCII16: "TestData2",
 		StringUTF816:  "TestDäta3", // add utf8 char
-		CustomUint16:  tests.CustomUint16(123),
-		CustomInt16:   sub.CustomInt16(-789),
 	}
 }
 
@@ -77,8 +76,6 @@ func BenchmarkLittleEndianHighWordMarshal(b *testing.B) {
 		StringASCII8:  "TestData1",
 		StringASCII16: "TestData2",
 		StringUTF816:  "TestDäta3", // add utf8 char
-		CustomUint16:  tests.CustomUint16(123),
-		CustomInt16:   sub.CustomInt16(-789),
 	}
 
 	for b.Loop() {
@@ -109,8 +106,6 @@ func BenchmarkLittleEndianHighWordUnmarshal(b *testing.B) {
 		StringASCII8:  "TestData1",
 		StringASCII16: "TestData2",
 		StringUTF816:  "TestDäta3", // add utf8 char
-		CustomUint16:  tests.CustomUint16(123),
-		CustomInt16:   sub.CustomInt16(-789),
 	}
 
 	reg, err := test.Marshal()
@@ -119,6 +114,232 @@ func BenchmarkLittleEndianHighWordUnmarshal(b *testing.B) {
 	}
 
 	test = &tests.LittleEndianHighWord{}
+
+	for b.Loop() {
+		err := test.Unmarshal(reg)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+// -------------------------------------------------------------------
+
+type LittleEndianHighWordAllCustomTestSuite struct {
+	suite.Suite
+	LittleEndianHighWordAllCustom tests.LittleEndianHighWordAllCustom
+}
+
+func (s *LittleEndianHighWordAllCustomTestSuite) SetupTest() {
+	s.LittleEndianHighWordAllCustom = tests.LittleEndianHighWordAllCustom{
+		Ignored:       0x4321,
+		Uint8High:     0x11,
+		Uint8Low:      0x22,
+		ByteHigh:      0x33,
+		ByteLow:       0x44,
+		Int8Low:       -50,
+		Int8High:      -100,
+		Uint16:        0x1234,
+		Int16:         -42,
+		Uint32:        0x12345678,
+		Int32:         -111222,
+		Uint64:        0x1234123412341234,
+		Int64:         -1111222233334444,
+		Float32:       1234.5678,
+		Float64:       -1234.5678,
+		StringASCII8:  "TestData1",
+		StringASCII16: "TestData2",
+		StringUTF816:  "TestDäta3", // add utf8 char
+	}
+}
+
+func (s *LittleEndianHighWordAllCustomTestSuite) TestMarshalUnmarshal() {
+	reg, err := s.LittleEndianHighWordAllCustom.Marshal()
+	s.Require().NoError(err)
+
+	out := &tests.LittleEndianHighWordAllCustom{}
+	err = out.Unmarshal(reg)
+	s.Require().NoError(err)
+
+	s.Empty(out.Ignored)
+
+	// Ignored field is not set by Unmarshal, set it manually for comparison
+	out.Ignored = s.LittleEndianHighWordAllCustom.Ignored
+
+	s.Equal(s.LittleEndianHighWordAllCustom, *out)
+}
+
+func BenchmarkLittleEndianHighWordAllCustomMarshal(b *testing.B) {
+	test := &tests.LittleEndianHighWordAllCustom{
+		Ignored:       0x4321,
+		Uint8High:     0x11,
+		Uint8Low:      0x22,
+		ByteHigh:      0x33,
+		ByteLow:       0x44,
+		Int8Low:       -50,
+		Int8High:      -100,
+		Uint16:        0x1234,
+		Int16:         -42,
+		Uint32:        0x12345678,
+		Int32:         -111222,
+		Uint64:        0x1234123412341234,
+		Int64:         -1111222233334444,
+		Float32:       1234.5678,
+		Float64:       -1234.5678,
+		StringASCII8:  "TestData1",
+		StringASCII16: "TestData2",
+		StringUTF816:  "TestDäta3", // add utf8 char
+	}
+
+	for b.Loop() {
+		_, err := test.Marshal()
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkLittleEndianHighWordAllCustomUnmarshal(b *testing.B) {
+	test := &tests.LittleEndianHighWordAllCustom{
+		Ignored:       0x4321,
+		Uint8High:     0x11,
+		Uint8Low:      0x22,
+		ByteHigh:      0x33,
+		ByteLow:       0x44,
+		Int8Low:       -50,
+		Int8High:      -100,
+		Uint16:        0x1234,
+		Int16:         -42,
+		Uint32:        0x12345678,
+		Int32:         -111222,
+		Uint64:        0x1234123412341234,
+		Int64:         -1111222233334444,
+		Float32:       1234.5678,
+		Float64:       -1234.5678,
+		StringASCII8:  "TestData1",
+		StringASCII16: "TestData2",
+		StringUTF816:  "TestDäta3", // add utf8 char
+	}
+
+	reg, err := test.Marshal()
+	if err != nil {
+		b.Fatal(err)
+	}
+
+	test = &tests.LittleEndianHighWordAllCustom{}
+
+	for b.Loop() {
+		err := test.Unmarshal(reg)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+// -------------------------------------------------------------------
+
+type LittleEndianHighWordAllCustomExternTestSuite struct {
+	suite.Suite
+	LittleEndianHighWordAllCustomExtern tests.LittleEndianHighWordAllCustomExtern
+}
+
+func (s *LittleEndianHighWordAllCustomExternTestSuite) SetupTest() {
+	s.LittleEndianHighWordAllCustomExtern = tests.LittleEndianHighWordAllCustomExtern{
+		Ignored:       0x4321,
+		Uint8High:     0x11,
+		Uint8Low:      0x22,
+		ByteHigh:      0x33,
+		ByteLow:       0x44,
+		Int8Low:       -50,
+		Int8High:      -100,
+		Uint16:        0x1234,
+		Int16:         -42,
+		Uint32:        0x12345678,
+		Int32:         -111222,
+		Uint64:        0x1234123412341234,
+		Int64:         -1111222233334444,
+		Float32:       1234.5678,
+		Float64:       -1234.5678,
+		StringASCII8:  "TestData1",
+		StringASCII16: "TestData2",
+		StringUTF816:  "TestDäta3", // add utf8 char
+	}
+}
+
+func (s *LittleEndianHighWordAllCustomExternTestSuite) TestMarshalUnmarshal() {
+	reg, err := s.LittleEndianHighWordAllCustomExtern.Marshal()
+	s.Require().NoError(err)
+
+	out := &tests.LittleEndianHighWordAllCustomExtern{}
+	err = out.Unmarshal(reg)
+	s.Require().NoError(err)
+
+	s.Empty(out.Ignored)
+
+	// Ignored field is not set by Unmarshal, set it manually for comparison
+	out.Ignored = s.LittleEndianHighWordAllCustomExtern.Ignored
+
+	s.Equal(s.LittleEndianHighWordAllCustomExtern, *out)
+}
+
+func BenchmarkLittleEndianHighWordAllCustomExternMarshal(b *testing.B) {
+	test := &tests.LittleEndianHighWordAllCustomExtern{
+		Ignored:       0x4321,
+		Uint8High:     0x11,
+		Uint8Low:      0x22,
+		ByteHigh:      0x33,
+		ByteLow:       0x44,
+		Int8Low:       -50,
+		Int8High:      -100,
+		Uint16:        0x1234,
+		Int16:         -42,
+		Uint32:        0x12345678,
+		Int32:         -111222,
+		Uint64:        0x1234123412341234,
+		Int64:         -1111222233334444,
+		Float32:       1234.5678,
+		Float64:       -1234.5678,
+		StringASCII8:  "TestData1",
+		StringASCII16: "TestData2",
+		StringUTF816:  "TestDäta3", // add utf8 char
+	}
+
+	for b.Loop() {
+		_, err := test.Marshal()
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkLittleEndianHighWordAllCustomExternUnmarshal(b *testing.B) {
+	test := &tests.LittleEndianHighWordAllCustomExtern{
+		Ignored:       0x4321,
+		Uint8High:     0x11,
+		Uint8Low:      0x22,
+		ByteHigh:      0x33,
+		ByteLow:       0x44,
+		Int8Low:       -50,
+		Int8High:      -100,
+		Uint16:        0x1234,
+		Int16:         -42,
+		Uint32:        0x12345678,
+		Int32:         -111222,
+		Uint64:        0x1234123412341234,
+		Int64:         -1111222233334444,
+		Float32:       1234.5678,
+		Float64:       -1234.5678,
+		StringASCII8:  "TestData1",
+		StringASCII16: "TestData2",
+		StringUTF816:  "TestDäta3", // add utf8 char
+	}
+
+	reg, err := test.Marshal()
+	if err != nil {
+		b.Fatal(err)
+	}
+
+	test = &tests.LittleEndianHighWordAllCustomExtern{}
 
 	for b.Loop() {
 		err := test.Unmarshal(reg)

@@ -7,19 +7,19 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-func TestBigEndianHighWord(t *testing.T) {
-	suite.Run(t, new(BigEndianHighWordTestSuite))
-	suite.Run(t, new(BigEndianHighWordAllCustomTestSuite))
-	suite.Run(t, new(BigEndianHighWordAllCustomExternTestSuite))
+func TestBigEndianLowWord(t *testing.T) {
+	suite.Run(t, new(BigEndianLowWordTestSuite))
+	suite.Run(t, new(BigEndianLowWordAllCustomTestSuite))
+	suite.Run(t, new(BigEndianLowWordAllCustomExternTestSuite))
 }
 
-type BigEndianHighWordTestSuite struct {
+type BigEndianLowWordTestSuite struct {
 	suite.Suite
-	BigEndianHighWord tests.BigEndianHighWord
+	BigEndianLowWord tests.BigEndianHighWord
 }
 
-func (s *BigEndianHighWordTestSuite) SetupTest() {
-	s.BigEndianHighWord = tests.BigEndianHighWord{
+func (s *BigEndianLowWordTestSuite) SetupTest() {
+	s.BigEndianLowWord = tests.BigEndianHighWord{
 		Ignored:       0x4321,
 		Uint8High:     0x11,
 		Uint8Low:      0x22,
@@ -41,8 +41,8 @@ func (s *BigEndianHighWordTestSuite) SetupTest() {
 	}
 }
 
-func (s *BigEndianHighWordTestSuite) TestMarshalUnmarshal() {
-	reg, err := s.BigEndianHighWord.Marshal()
+func (s *BigEndianLowWordTestSuite) TestMarshalUnmarshal() {
+	reg, err := s.BigEndianLowWord.Marshal()
 	s.Require().NoError(err)
 
 	out := &tests.BigEndianHighWord{}
@@ -51,13 +51,13 @@ func (s *BigEndianHighWordTestSuite) TestMarshalUnmarshal() {
 
 	s.Empty(out.Ignored)
 
-	out.Ignored = s.BigEndianHighWord.Ignored // Ignored field is not set by Unmarshal, set it manually for comparison
+	out.Ignored = s.BigEndianLowWord.Ignored // Ignored field is not set by Unmarshal, set it manually for comparison
 
-	s.Equal(s.BigEndianHighWord, *out)
+	s.Equal(s.BigEndianLowWord, *out)
 }
 
-func BenchmarkBigEndianHighWordMarshal(b *testing.B) {
-	test := &tests.BigEndianHighWord{
+func BenchmarkBigEndianLowWordMarshal(b *testing.B) {
+	test := &tests.BigEndianLowWord{
 		Ignored:       0x4321,
 		Uint8High:     0x11,
 		Uint8Low:      0x22,
@@ -86,8 +86,8 @@ func BenchmarkBigEndianHighWordMarshal(b *testing.B) {
 	}
 }
 
-func BenchmarkBigEndianHighWordUnmarshal(b *testing.B) {
-	test := &tests.BigEndianHighWord{
+func BenchmarkBigEndianLowWordUnmarshal(b *testing.B) {
+	test := &tests.BigEndianLowWord{
 		Ignored:       0x4321,
 		Uint8High:     0x11,
 		Uint8Low:      0x22,
@@ -113,7 +113,7 @@ func BenchmarkBigEndianHighWordUnmarshal(b *testing.B) {
 		b.Fatal(err)
 	}
 
-	test = &tests.BigEndianHighWord{}
+	test = &tests.BigEndianLowWord{}
 
 	for b.Loop() {
 		err := test.Unmarshal(reg)
@@ -123,13 +123,15 @@ func BenchmarkBigEndianHighWordUnmarshal(b *testing.B) {
 	}
 }
 
-type BigEndianHighWordAllCustomTestSuite struct {
+// ---------------------------------------------------------------
+
+type BigEndianLowWordAllCustomTestSuite struct {
 	suite.Suite
-	BigEndianHighWordAllCustom tests.BigEndianHighWordAllCustom
+	BigEndianLowWordAllCustom tests.BigEndianHighWordAllCustom
 }
 
-func (s *BigEndianHighWordAllCustomTestSuite) SetupTest() {
-	s.BigEndianHighWordAllCustom = tests.BigEndianHighWordAllCustom{
+func (s *BigEndianLowWordAllCustomTestSuite) SetupTest() {
+	s.BigEndianLowWordAllCustom = tests.BigEndianHighWordAllCustom{
 		Ignored:       0x4321,
 		Uint8High:     0x11,
 		Uint8Low:      0x22,
@@ -151,10 +153,8 @@ func (s *BigEndianHighWordAllCustomTestSuite) SetupTest() {
 	}
 }
 
-// ----------------------------------------------------------------------
-
-func (s *BigEndianHighWordAllCustomTestSuite) TestMarshalUnmarshal() {
-	reg, err := s.BigEndianHighWordAllCustom.Marshal()
+func (s *BigEndianLowWordAllCustomTestSuite) TestMarshalUnmarshal() {
+	reg, err := s.BigEndianLowWordAllCustom.Marshal()
 	s.Require().NoError(err)
 
 	out := &tests.BigEndianHighWordAllCustom{}
@@ -164,12 +164,12 @@ func (s *BigEndianHighWordAllCustomTestSuite) TestMarshalUnmarshal() {
 	s.Empty(out.Ignored)
 
 	// Ignored field is not set by Unmarshal, set it manually for comparison
-	out.Ignored = s.BigEndianHighWordAllCustom.Ignored
+	out.Ignored = s.BigEndianLowWordAllCustom.Ignored
 
-	s.Equal(s.BigEndianHighWordAllCustom, *out)
+	s.Equal(s.BigEndianLowWordAllCustom, *out)
 }
 
-func BenchmarkBigEndianHighWordAllCustomMarshal(b *testing.B) {
+func BenchmarkBigEndianLowWordAllCustomMarshal(b *testing.B) {
 	test := &tests.BigEndianHighWordAllCustom{
 		Ignored:       0x4321,
 		Uint8High:     0x11,
@@ -199,7 +199,7 @@ func BenchmarkBigEndianHighWordAllCustomMarshal(b *testing.B) {
 	}
 }
 
-func BenchmarkBigEndianHighWordAllCustomUnmarshal(b *testing.B) {
+func BenchmarkBigEndianLowWordAllCustomUnmarshal(b *testing.B) {
 	test := &tests.BigEndianHighWordAllCustom{
 		Ignored:       0x4321,
 		Uint8High:     0x11,
@@ -236,15 +236,15 @@ func BenchmarkBigEndianHighWordAllCustomUnmarshal(b *testing.B) {
 	}
 }
 
-// ----------------------------------------------------------------------
+// ---------------------------------------------------------------
 
-type BigEndianHighWordAllCustomExternTestSuite struct {
+type BigEndianLowWordAllCustomExternTestSuite struct {
 	suite.Suite
-	BigEndianHighWordAllCustomExtern tests.BigEndianHighWordAllCustomExtern
+	BigEndianLowWordAllCustomExtern tests.BigEndianHighWordAllCustomExtern
 }
 
-func (s *BigEndianHighWordAllCustomExternTestSuite) SetupTest() {
-	s.BigEndianHighWordAllCustomExtern = tests.BigEndianHighWordAllCustomExtern{
+func (s *BigEndianLowWordAllCustomExternTestSuite) SetupTest() {
+	s.BigEndianLowWordAllCustomExtern = tests.BigEndianHighWordAllCustomExtern{
 		Ignored:       0x4321,
 		Uint8High:     0x11,
 		Uint8Low:      0x22,
@@ -266,8 +266,8 @@ func (s *BigEndianHighWordAllCustomExternTestSuite) SetupTest() {
 	}
 }
 
-func (s *BigEndianHighWordAllCustomExternTestSuite) TestMarshalUnmarshal() {
-	reg, err := s.BigEndianHighWordAllCustomExtern.Marshal()
+func (s *BigEndianLowWordAllCustomExternTestSuite) TestMarshalUnmarshal() {
+	reg, err := s.BigEndianLowWordAllCustomExtern.Marshal()
 	s.Require().NoError(err)
 
 	out := &tests.BigEndianHighWordAllCustomExtern{}
@@ -277,12 +277,12 @@ func (s *BigEndianHighWordAllCustomExternTestSuite) TestMarshalUnmarshal() {
 	s.Empty(out.Ignored)
 
 	// Ignored field is not set by Unmarshal, set it manually for comparison
-	out.Ignored = s.BigEndianHighWordAllCustomExtern.Ignored
+	out.Ignored = s.BigEndianLowWordAllCustomExtern.Ignored
 
-	s.Equal(s.BigEndianHighWordAllCustomExtern, *out)
+	s.Equal(s.BigEndianLowWordAllCustomExtern, *out)
 }
 
-func BenchmarkBigEndianHighWordAllCustomExternMarshal(b *testing.B) {
+func BenchmarkBigEndianLowWordAllCustomExternMarshal(b *testing.B) {
 	test := &tests.BigEndianHighWordAllCustomExtern{
 		Ignored:       0x4321,
 		Uint8High:     0x11,
@@ -312,7 +312,7 @@ func BenchmarkBigEndianHighWordAllCustomExternMarshal(b *testing.B) {
 	}
 }
 
-func BenchmarkBigEndianHighWordAllCustomExternUnmarshal(b *testing.B) {
+func BenchmarkBigEndianLowWordAllCustomExternUnmarshal(b *testing.B) {
 	test := &tests.BigEndianHighWordAllCustomExtern{
 		Ignored:       0x4321,
 		Uint8High:     0x11,

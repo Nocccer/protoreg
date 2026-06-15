@@ -67,18 +67,11 @@ func (f FieldFloat32) Marshaler() string {
 	var sb strings.Builder
 
 	sb.WriteString(f.Comment())
-	fmt.Fprintf(&sb, "\ttmp32 = math.Float32bits(m.%s)\n", f.Name)
+	fmt.Fprintf(&sb, "\ttmp32 = math.Float32bits(float32(m.%s))\n", f.Name)
 
-	switch *f.Tags.Encoding {
-	case BigEndian:
-		fmt.Fprintf(&sb, "\tbuf[%d] = uint16(tmp32)\n", *f.Tags.Offset)
-		fmt.Fprintf(&sb, "\tbuf[%d] = uint16(tmp32>>16)\n", *f.Tags.Offset+1)
-	case LittleEndian:
-		fmt.Fprintf(&sb, "\tbuf[%d] = bits.ReverseBytes16(uint16(tmp32))\n",
-			*f.Tags.Offset)
-		fmt.Fprintf(&sb, "\tbuf[%d] = bits.ReverseBytes16(uint16(tmp32>>16))\n",
-			*f.Tags.Offset+1)
-	}
+	offsets := f.calcWordOffsets32()
+	fmt.Fprintf(&sb, "\tbuf[%d] = %s\n", offsets[0], f.encodeWord16("tmp32", ""))
+	fmt.Fprintf(&sb, "\tbuf[%d] = %s\n", offsets[1], f.encodeWord16("tmp32", ">>16"))
 
 	return sb.String()
 }
@@ -88,19 +81,11 @@ func (f FieldFloat32) Unmarshaler() string {
 
 	sb.WriteString(f.Comment())
 
-	switch *f.Tags.Encoding {
-	case BigEndian:
-		fmt.Fprintf(&sb, "\ttmp32 = uint32(buf[%d]) | uint32(buf[%d]) << 16\n",
-			*f.Tags.Offset,
-			*f.Tags.Offset+1)
-	case LittleEndian:
-		fmt.Fprintf(
-			&sb,
-			"\ttmp32 = uint32(bits.ReverseBytes16(buf[%d])) | uint32(bits.ReverseBytes16(buf[%d]))<<16\n",
-			*f.Tags.Offset,
-			*f.Tags.Offset+1,
-		)
-	}
+	offsets := f.calcWordOffsets32()
+	w0 := f.decodeWord16(offsets[0])
+	w1 := f.decodeWord16(offsets[1])
+
+	fmt.Fprintf(&sb, "\ttmp32 = uint32(%s) | uint32(%s) << 16\n", w0, w1)
 
 	if f.IsCustomType {
 		fmt.Fprintf(&sb, "\tm.%s = %s(math.Float32frombits(tmp32))\n", f.Name, f.CustomType)
@@ -119,24 +104,13 @@ func (f FieldFloat64) Marshaler() string {
 	var sb strings.Builder
 
 	sb.WriteString(f.Comment())
-	fmt.Fprintf(&sb, "\ttmp64 = math.Float64bits(m.%s)\n", f.Name)
+	fmt.Fprintf(&sb, "\ttmp64 = math.Float64bits(float64(m.%s))\n", f.Name)
 
-	switch *f.Tags.Encoding {
-	case BigEndian:
-		fmt.Fprintf(&sb, "\tbuf[%d] = uint16(tmp64)\n", *f.Tags.Offset)
-		fmt.Fprintf(&sb, "\tbuf[%d] = uint16(tmp64>>16)\n", *f.Tags.Offset+1)
-		fmt.Fprintf(&sb, "\tbuf[%d] = uint16(tmp64>>32)\n", *f.Tags.Offset+2)
-		fmt.Fprintf(&sb, "\tbuf[%d] = uint16(tmp64>>48)\n", *f.Tags.Offset+3)
-	case LittleEndian:
-		fmt.Fprintf(&sb, "\tbuf[%d] = bits.ReverseBytes16(uint16(tmp64))\n",
-			*f.Tags.Offset)
-		fmt.Fprintf(&sb, "\tbuf[%d] = bits.ReverseBytes16(uint16(tmp64>>16))\n",
-			*f.Tags.Offset+1)
-		fmt.Fprintf(&sb, "\tbuf[%d] = bits.ReverseBytes16(uint16(tmp64>>32))\n",
-			*f.Tags.Offset+2)
-		fmt.Fprintf(&sb, "\tbuf[%d] = bits.ReverseBytes16(uint16(tmp64>>48))\n",
-			*f.Tags.Offset+3)
-	}
+	offsets := f.calcWordOffsets64()
+	fmt.Fprintf(&sb, "\tbuf[%d] = %s\n", offsets[0], f.encodeWord16("tmp64", ""))
+	fmt.Fprintf(&sb, "\tbuf[%d] = %s\n", offsets[1], f.encodeWord16("tmp64", ">>16"))
+	fmt.Fprintf(&sb, "\tbuf[%d] = %s\n", offsets[2], f.encodeWord16("tmp64", ">>32"))
+	fmt.Fprintf(&sb, "\tbuf[%d] = %s\n", offsets[3], f.encodeWord16("tmp64", ">>48"))
 
 	return sb.String()
 }
@@ -146,27 +120,15 @@ func (f FieldFloat64) Unmarshaler() string {
 
 	sb.WriteString(f.Comment())
 
-	switch *f.Tags.Encoding {
-	case BigEndian:
-		fmt.Fprintf(
-			&sb,
-			"\ttmp64 = uint64(buf[%d]) | uint64(buf[%d]) << 16 | uint64(buf[%d]) << 32 | uint64(buf[%d]) << 48\n",
-			*f.Tags.Offset,
-			*f.Tags.Offset+1,
-			*f.Tags.Offset+2,
-			*f.Tags.Offset+3,
-		)
-	case LittleEndian:
-		fmt.Fprintf(
-			&sb,
-			"\ttmp64 = uint64(bits.ReverseBytes16(buf[%d])) | uint64(bits.ReverseBytes16(buf[%d]))<<16 | "+
-				"uint64(bits.ReverseBytes16(buf[%d]))<<32 | uint64(bits.ReverseBytes16(buf[%d]))<<48\n",
-			*f.Tags.Offset,
-			*f.Tags.Offset+1,
-			*f.Tags.Offset+2,
-			*f.Tags.Offset+3,
-		)
-	}
+	offsets := f.calcWordOffsets64()
+	w0 := f.decodeWord16(offsets[0])
+	w1 := f.decodeWord16(offsets[1])
+	w2 := f.decodeWord16(offsets[2])
+	w3 := f.decodeWord16(offsets[3])
+
+	fmt.Fprintf(&sb,
+		"\ttmp64 = uint64(%s) | uint64(%s) << 16 | uint64(%s) << 32 | uint64(%s) << 48\n",
+		w0, w1, w2, w3)
 
 	if f.IsCustomType {
 		fmt.Fprintf(&sb, "\tm.%s = %s(math.Float64frombits(tmp64))\n", f.Name, f.CustomType)

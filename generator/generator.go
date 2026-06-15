@@ -13,23 +13,48 @@ import (
 )
 
 type ProtoRegGen struct {
-	types     []string
-	dir       string
-	pkg       string
-	log       *slog.Logger
-	imports   []string
-	content   string
-	encoding  Encoding
-	wordOrder WordOrder
+	types             []string
+	dir               string
+	pkg               string
+	log               *slog.Logger
+	imports           []string
+	content           string
+	encoding          Encoding
+	wordOrder         WordOrder
+	tagKey            string
+	mode              GenMode
+	marshalFuncName   string
+	unmarshalFuncName string
 }
 
-func NewGenerator(types []string, dir string, log *slog.Logger) *ProtoRegGen {
-	return &ProtoRegGen{
-		types:     types,
-		dir:       dir,
-		log:       log,
-		encoding:  BigEndian,
-		wordOrder: HighWordFirst,
+func NewGenerator(
+	types []string,
+	dir string,
+	log *slog.Logger,
+	opts ...func(*ProtoRegGen),
+) *ProtoRegGen {
+	g := &ProtoRegGen{
+		types:             types,
+		dir:               dir,
+		log:               log,
+		encoding:          BigEndian,
+		wordOrder:         HighWordFirst,
+		tagKey:            "protoreg",
+		mode:              GenModeAll,
+		marshalFuncName:   "Marshal",
+		unmarshalFuncName: "Unmarshal",
+	}
+
+	for _, opt := range opts {
+		opt(g)
+	}
+
+	return g
+}
+
+func WithTagKey(tagKey string) func(*ProtoRegGen) {
+	return func(g *ProtoRegGen) {
+		g.tagKey = tagKey
 	}
 }
 
@@ -186,8 +211,14 @@ func (g *ProtoRegGen) genFromStruct(
 		slog.String("struct", name),
 	)
 
+	// Reset to defaults before processing this struct
+	g.encoding = BigEndian
+	g.wordOrder = HighWordFirst
+	g.mode = GenModeAll
+	g.marshalFuncName = "Marshal"
+	g.unmarshalFuncName = "Unmarshal"
+
 	structRes := StructResult{}
-	gen := GenModeAll
 	length := 0
 	gens := []Generator{}
 
@@ -196,7 +227,7 @@ func (g *ProtoRegGen) genFromStruct(
 		return field.Names[0].Name == "_"
 	})
 	if idx != -1 {
-		tagStr, ok := extractProtoRegTag(typ.Fields.List[idx].Tag.Value)
+		tagStr, ok := extractTagByKey(typ.Fields.List[idx].Tag.Value, g.tagKey)
 		if ok {
 			if err := g.extractOpts(tagStr); err != nil {
 				return StructResult{}, err
@@ -208,6 +239,9 @@ func (g *ProtoRegGen) genFromStruct(
 		"extract options",
 		slog.String("encoding", string(g.encoding)),
 		slog.String("wordorder", string(g.wordOrder)),
+		slog.String("mode", string(g.mode)),
+		slog.String("marshalFuncName", g.marshalFuncName),
+		slog.String("unmarshalFuncName", g.unmarshalFuncName),
 	)
 
 	for _, field := range typ.Fields.List {
@@ -215,7 +249,7 @@ func (g *ProtoRegGen) genFromStruct(
 			continue
 		}
 
-		tagStr, ok := extractProtoRegTag(field.Tag.Value)
+		tagStr, ok := extractTagByKey(field.Tag.Value, g.tagKey)
 		if !ok {
 			continue
 		}
@@ -232,10 +266,10 @@ func (g *ProtoRegGen) genFromStruct(
 	}
 
 	var sb strings.Builder
-	if gen != GenModeUnmarshal {
+	if g.mode != GenModeUnmarshal {
 		g.log.Debug("generate marshaler")
 
-		fmt.Fprintf(&sb, "func (m %s) Marshal() ([]uint16, error) {\n", name)
+		fmt.Fprintf(&sb, "func (m %s) %s() ([]uint16, error) {\n", name, g.marshalFuncName)
 		fmt.Fprintf(&sb, "\tbuf := make([]uint16, %d)\n", length)
 
 		var sbFields strings.Builder
@@ -264,10 +298,10 @@ func (g *ProtoRegGen) genFromStruct(
 		sb.WriteString("}\n\n")
 	}
 
-	if gen != GenModeMarshal {
+	if g.mode != GenModeMarshal {
 		g.log.Debug("generate unmarshaler")
 
-		fmt.Fprintf(&sb, "func (m *%s) Unmarshal(buf []uint16) error {\n", name)
+		fmt.Fprintf(&sb, "func (m *%s) %s(buf []uint16) error {\n", name, g.unmarshalFuncName)
 
 		var sbFields strings.Builder
 		for _, gen := range gens {
@@ -303,4 +337,73 @@ func (g *ProtoRegGen) genFromStruct(
 	structRes.Code = sb.String()
 
 	return structRes, nil
+}
+
+func (g *ProtoRegGen) extractField(
+	name string,
+	typ ast.Expr,
+	tagStr string,
+	typesInfo *types.Info,
+) (NewGenResult, error) {
+	t, ok := typesInfo.Types[typ]
+	if !ok {
+		return NewGenResult{}, fmt.Errorf("unknown type: %v", typ)
+	}
+
+	g.log.Debug(
+		"extract field",
+		slog.String("field", name),
+		slog.Any("type", t.Type.String()),
+		slog.Any("tags", tagStr),
+	)
+
+	tag, err := extractTags(tagStr)
+	if err != nil {
+		return NewGenResult{}, fmt.Errorf("failed to extract tags for %s: %v", name, err)
+	}
+
+	if strings.Contains(t.Type.Underlying().String(), "int") ||
+		strings.Contains(t.Type.Underlying().String(), "byte") {
+		return g.newIntegerGen(name, t.Type, tag)
+	} else if strings.Contains(t.Type.Underlying().String(), "float") {
+		return g.newFloatGen(name, t.Type, tag)
+	} else if t.Type.Underlying().String() == "string" {
+		return g.newStringGen(name, t.Type, tag)
+	}
+
+	return NewGenResult{}, fmt.Errorf(
+		"unsupported underlying field type: %s",
+		t.Type.Underlying().String(),
+	)
+}
+
+func (g *ProtoRegGen) extractOpts(tagStr string) error {
+	// Extract encoding and word order from the tag string
+	parts := strings.SplitSeq(tagStr, ",")
+	for part := range parts {
+		switch {
+		case strings.HasPrefix(part, "encoding="):
+			g.encoding = Encoding(strings.TrimPrefix(part, "encoding="))
+		case strings.HasPrefix(part, "wordorder="):
+			g.wordOrder = WordOrder(strings.TrimPrefix(part, "wordorder="))
+		case strings.HasPrefix(part, "mode="):
+			g.mode = GenMode(strings.TrimPrefix(part, "mode="))
+		case strings.HasPrefix(part, "marshalfunc="):
+			g.marshalFuncName = strings.TrimPrefix(part, "marshalfunc=")
+		case strings.HasPrefix(part, "unmarshalfunc="):
+			g.unmarshalFuncName = strings.TrimPrefix(part, "unmarshalfunc=")
+		}
+	}
+
+	if g.encoding != BigEndian && g.encoding != LittleEndian {
+		return fmt.Errorf("invalid encoding: %v", g.encoding)
+	}
+	if g.wordOrder != HighWordFirst && g.wordOrder != LowWordFirst {
+		return fmt.Errorf("invalid word order: %v", g.wordOrder)
+	}
+	if g.mode != GenModeAll && g.mode != GenModeMarshal && g.mode != GenModeUnmarshal {
+		return fmt.Errorf("invalid mode: %v", g.mode)
+	}
+
+	return nil
 }

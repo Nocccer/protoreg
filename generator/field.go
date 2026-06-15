@@ -2,10 +2,6 @@ package generator
 
 import (
 	"fmt"
-	"go/ast"
-	"go/types"
-	"log/slog"
-	"strings"
 )
 
 type Field struct {
@@ -19,62 +15,51 @@ func (f Field) Comment() string {
 	return fmt.Sprintf("\t// %s\n", f.Name)
 }
 
-func (g *ProtoRegGen) extractField(
-	name string,
-	typ ast.Expr,
-	tagStr string,
-	typesInfo *types.Info,
-) (NewGenResult, error) {
-	t, ok := typesInfo.Types[typ]
-	if !ok {
-		return NewGenResult{}, fmt.Errorf("unknown type: %v", typ)
+// calcWordOffsets32 returns offsets for low and high word based on WordOrder
+// Returns [lowWordOffset, highWordOffset]
+func (f Field) calcWordOffsets32() [2]int {
+	low := *f.Tags.Offset
+	high := *f.Tags.Offset + 1
+	if *f.Tags.WordOrder == LowWordFirst {
+		return [2]int{low, high}
 	}
-
-	g.log.Debug(
-		"extract field",
-		slog.String("field", name),
-		slog.Any("type", t.Type.String()),
-		slog.Any("tags", tagStr),
-	)
-
-	tag, err := extractTags(tagStr)
-	if err != nil {
-		return NewGenResult{}, fmt.Errorf("failed to extract tags for %s: %v", name, err)
-	}
-
-	if strings.Contains(t.Type.Underlying().String(), "int") ||
-		strings.Contains(t.Type.Underlying().String(), "byte") {
-		return g.newIntegerGen(name, t.Type, tag)
-	} else if strings.Contains(t.Type.Underlying().String(), "float") {
-		return g.newFloatGen(name, t.Type, tag)
-	} else if t.Type.Underlying().String() == "string" {
-		return g.newStringGen(name, t.Type, tag)
-	}
-
-	return NewGenResult{}, fmt.Errorf(
-		"unsupported underlying field type: %s",
-		t.Type.Underlying().String(),
-	)
+	// HighWordFirst (default)
+	return [2]int{high, low}
 }
 
-func (g *ProtoRegGen) extractOpts(tagStr string) error {
-	// Extract encoding and word order from the tag string
-	parts := strings.SplitSeq(tagStr, ",")
-	for part := range parts {
-		switch {
-		case strings.HasPrefix(part, "encoding="):
-			g.encoding = Encoding(strings.TrimPrefix(part, "encoding="))
-		case strings.HasPrefix(part, "wordOrder="):
-			g.wordOrder = WordOrder(strings.TrimPrefix(part, "wordOrder="))
-		}
+// calcWordOffsets64 returns offsets for all 4 words based on WordOrder
+// Returns [word0Offset, word1Offset, word2Offset, word3Offset] in correct order
+func (f Field) calcWordOffsets64() [4]int {
+	offsets := [4]int{
+		*f.Tags.Offset,
+		*f.Tags.Offset + 1,
+		*f.Tags.Offset + 2,
+		*f.Tags.Offset + 3,
 	}
 
-	if g.encoding != BigEndian && g.encoding != LittleEndian {
-		return fmt.Errorf("invalid encoding: %v", g.encoding)
+	if *f.Tags.WordOrder == LowWordFirst {
+		return offsets
 	}
-	if g.wordOrder != HighWordFirst && g.wordOrder != LowWordFirst {
-		return fmt.Errorf("invalid word order: %v", g.wordOrder)
-	}
+	// HighWordFirst: reverse order
+	return [4]int{offsets[3], offsets[2], offsets[1], offsets[0]}
+}
 
-	return nil
+// encodeWord16 returns encoding logic for a 16-bit word
+func (f Field) encodeWord16(value string, shift string) string {
+	switch *f.Tags.Encoding {
+	case LittleEndian:
+		return fmt.Sprintf("bits.ReverseBytes16(uint16(%s%s))", value, shift)
+	default:
+		return fmt.Sprintf("uint16(%s%s)", value, shift)
+	}
+}
+
+// decodeWord16 returns decoding logic for a 16-bit word
+func (f Field) decodeWord16(bufIndex int) string {
+	switch *f.Tags.Encoding {
+	case LittleEndian:
+		return fmt.Sprintf("bits.ReverseBytes16(buf[%d])", bufIndex)
+	default:
+		return fmt.Sprintf("buf[%d]", bufIndex)
+	}
 }
