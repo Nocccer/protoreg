@@ -75,10 +75,10 @@ func (f FieldString) Marshaler() string {
 		sb.WriteString("\t\tvar b2 byte\n")
 		fmt.Fprintf(&sb, "\t\tif i+1 < length {b2 = m.%s[i+1]}\n", f.Name)
 		if *f.Tags.Encoding == BigEndian {
-			fmt.Fprintf(&sb, "\t\tbuf[%d+i/2] = uint16(b1) | uint16(b2)<<8\n",
+			fmt.Fprintf(&sb, "\t\tbuf[%d+i/2] = uint16(b1) | uint16(b2) <<8\n",
 				*f.Tags.Offset)
 		} else {
-			fmt.Fprintf(&sb, "\t\tbuf[%d+i/2] = uint16(b1)<<8 | uint16(b2)\n",
+			fmt.Fprintf(&sb, "\t\tbuf[%d+i/2] = uint16(b1) <<8 | uint16(b2)\n",
 				*f.Tags.Offset)
 		}
 		sb.WriteString("\t}\n")
@@ -101,7 +101,7 @@ func (f FieldString) Marshaler() string {
 			fmt.Fprintf(&sb, "\t\tif i >= %d {break}\n", *f.Tags.Size)
 
 			if *f.Tags.Encoding == LittleEndian {
-				fmt.Fprintf(&sb, "\t\tbuf[%d+i] = uint16(r>>8) | uint16(r<<8)\n",
+				fmt.Fprintf(&sb, "\t\tbuf[%d+i] = uint16(r >> 8) | uint16(r << 8)\n",
 					*f.Tags.Offset)
 			} else {
 				fmt.Fprintf(&sb, "\t\tbuf[%d+i] = uint16(r)\n",
@@ -131,7 +131,7 @@ func (f FieldString) Unmarshaler() string {
 		if *f.Tags.Encoding == BigEndian {
 			sb.WriteString("\t\tlow := byte(v)\n")
 		} else {
-			sb.WriteString("\t\tlow := byte(v>>8)\n")
+			sb.WriteString("\t\tlow := byte(v >> 8)\n")
 		}
 		sb.WriteString("\t\tif low == 0 {bytes = bytes[:i*2];break} // stop on empty char\n")
 		sb.WriteString("\t\tbytes[i*2] = low\n")
@@ -161,7 +161,7 @@ func (f FieldString) Unmarshaler() string {
 				*f.Tags.Offset+*f.Tags.Size)
 			sb.WriteString("\t\tif v == 0 {runes = runes[:i];break} // stop on empty char\n")
 			if *f.Tags.Encoding == LittleEndian {
-				sb.WriteString("\t\trunes[i] = rune(v>>8) | rune(v<<8)\n")
+				sb.WriteString("\t\trunes[i] = rune(v >> 8) | rune(v << 8)\n")
 			} else {
 				sb.WriteString("\t\trunes[i] = rune(v)\n")
 			}

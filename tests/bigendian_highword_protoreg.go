@@ -16,45 +16,45 @@ func (m BigEndianHighWord) Marshal() ([]uint16, error) {
 	// Uint8Low
 	buf[0] = buf[0] | uint16(m.Uint8Low)
 	// Uint8High
-	buf[0] = buf[0] | uint16(m.Uint8High)<<8
+	buf[0] = buf[0] | uint16(m.Uint8High) << 8
 	// ByteLow
 	buf[1] = buf[1] | uint16(m.ByteLow)
 	// ByteHigh
-	buf[1] = buf[1] | uint16(m.ByteHigh)<<8
+	buf[1] = buf[1] | uint16(m.ByteHigh) << 8
 	// Int8Low
 	buf[2] = buf[2] | uint16(uint8(m.Int8Low))
 	// Int8High
-	buf[2] = buf[2] | uint16(uint8(m.Int8High))<<8
+	buf[2] = buf[2] | uint16(uint8(m.Int8High)) << 8
 	// Uint16
 	buf[3] = m.Uint16
 	// Int16
 	buf[4] = uint16(m.Int16)
 	// Uint32
 	buf[6] = uint16(m.Uint32)
-	buf[5] = uint16(m.Uint32>>16)
+	buf[5] = uint16(m.Uint32 >> 16)
 	// Int32
 	buf[8] = uint16(m.Int32)
-	buf[7] = uint16(m.Int32>>16)
+	buf[7] = uint16(m.Int32 >> 16)
 	// Uint64
 	buf[12] = uint16(m.Uint64)
-	buf[11] = uint16(m.Uint64>>16)
-	buf[10] = uint16(m.Uint64>>32)
-	buf[9] = uint16(m.Uint64>>48)
+	buf[11] = uint16(m.Uint64 >> 16)
+	buf[10] = uint16(m.Uint64 >> 32)
+	buf[9] = uint16(m.Uint64 >> 48)
 	// Int64
 	buf[16] = uint16(m.Int64)
-	buf[15] = uint16(m.Int64>>16)
-	buf[14] = uint16(m.Int64>>32)
-	buf[13] = uint16(m.Int64>>48)
+	buf[15] = uint16(m.Int64 >> 16)
+	buf[14] = uint16(m.Int64 >> 32)
+	buf[13] = uint16(m.Int64 >> 48)
 	// Float32
 	tmp32 = math.Float32bits(float32(m.Float32))
 	buf[18] = uint16(tmp32)
-	buf[17] = uint16(tmp32>>16)
+	buf[17] = uint16(tmp32 >> 16)
 	// Float64
 	tmp64 = math.Float64bits(float64(m.Float64))
 	buf[24] = uint16(tmp64)
-	buf[23] = uint16(tmp64>>16)
-	buf[22] = uint16(tmp64>>32)
-	buf[21] = uint16(tmp64>>48)
+	buf[23] = uint16(tmp64 >> 16)
+	buf[22] = uint16(tmp64 >> 32)
+	buf[21] = uint16(tmp64 >> 48)
 	// StringASCII8
 	length := len(m.StringASCII8)
 	for i := 0; i < length; i+=2 {
@@ -62,7 +62,7 @@ func (m BigEndianHighWord) Marshal() ([]uint16, error) {
 		b1 := m.StringASCII8[i]
 		var b2 byte
 		if i+1 < length {b2 = m.StringASCII8[i+1]}
-		buf[25+i/2] = uint16(b1) | uint16(b2)<<8
+		buf[25+i/2] = uint16(b1) | uint16(b2) <<8
 	}
 	// StringASCII16
 	for i := 0; i < len(m.StringASCII16); i++ {
@@ -101,15 +101,15 @@ func (m *BigEndianHighWord) Unmarshal(buf []uint16) error {
 	// Uint8Low
 	m.Uint8Low = uint8(buf[0])
 	// Uint8High
-	m.Uint8High = uint8(buf[0]>>8)
+	m.Uint8High = uint8(buf[0] >> 8)
 	// ByteLow
 	m.ByteLow = uint8(buf[1])
 	// ByteHigh
-	m.ByteHigh = uint8(buf[1]>>8)
+	m.ByteHigh = uint8(buf[1] >> 8)
 	// Int8Low
 	m.Int8Low = int8(buf[2])
 	// Int8High
-	m.Int8High = int8(buf[2]>>8)
+	m.Int8High = int8(buf[2] >> 8)
 	// Uint16
 	m.Uint16 = buf[3]
 	// Int16
@@ -117,7 +117,7 @@ func (m *BigEndianHighWord) Unmarshal(buf []uint16) error {
 	// Uint32
 	m.Uint32 = uint32(buf[6]) | uint32(buf[5]) << 16
 	// Int32
-	m.Int32 = int32(buf[8]) | int32(buf[7])<<16
+	m.Int32 = int32(buf[8]) | int32(buf[7]) << 16
 	// Uint64
 	m.Uint64 = uint64(buf[12]) | uint64(buf[11]) << 16 | uint64(buf[10]) << 32 | uint64(buf[9]) << 48
 	// Int64
@@ -178,45 +178,45 @@ func (m BigEndianHighWordAllCustom) Marshal() ([]uint16, error) {
 	// Uint8Low
 	buf[0] = buf[0] | uint16(m.Uint8Low)
 	// Uint8High
-	buf[0] = buf[0] | uint16(m.Uint8High)<<8
+	buf[0] = buf[0] | uint16(m.Uint8High) << 8
 	// ByteLow
 	buf[1] = buf[1] | uint16(m.ByteLow)
 	// ByteHigh
-	buf[1] = buf[1] | uint16(m.ByteHigh)<<8
+	buf[1] = buf[1] | uint16(m.ByteHigh) << 8
 	// Int8Low
 	buf[2] = buf[2] | uint16(uint8(m.Int8Low))
 	// Int8High
-	buf[2] = buf[2] | uint16(uint8(m.Int8High))<<8
+	buf[2] = buf[2] | uint16(uint8(m.Int8High)) << 8
 	// Uint16
 	buf[3] = uint16(m.Uint16)
 	// Int16
 	buf[4] = uint16(m.Int16)
 	// Uint32
 	buf[6] = uint16(m.Uint32)
-	buf[5] = uint16(m.Uint32>>16)
+	buf[5] = uint16(m.Uint32 >> 16)
 	// Int32
 	buf[8] = uint16(m.Int32)
-	buf[7] = uint16(m.Int32>>16)
+	buf[7] = uint16(m.Int32 >> 16)
 	// Uint64
 	buf[12] = uint16(m.Uint64)
-	buf[11] = uint16(m.Uint64>>16)
-	buf[10] = uint16(m.Uint64>>32)
-	buf[9] = uint16(m.Uint64>>48)
+	buf[11] = uint16(m.Uint64 >> 16)
+	buf[10] = uint16(m.Uint64 >> 32)
+	buf[9] = uint16(m.Uint64 >> 48)
 	// Int64
 	buf[16] = uint16(m.Int64)
-	buf[15] = uint16(m.Int64>>16)
-	buf[14] = uint16(m.Int64>>32)
-	buf[13] = uint16(m.Int64>>48)
+	buf[15] = uint16(m.Int64 >> 16)
+	buf[14] = uint16(m.Int64 >> 32)
+	buf[13] = uint16(m.Int64 >> 48)
 	// Float32
 	tmp32 = math.Float32bits(float32(m.Float32))
 	buf[18] = uint16(tmp32)
-	buf[17] = uint16(tmp32>>16)
+	buf[17] = uint16(tmp32 >> 16)
 	// Float64
 	tmp64 = math.Float64bits(float64(m.Float64))
 	buf[24] = uint16(tmp64)
-	buf[23] = uint16(tmp64>>16)
-	buf[22] = uint16(tmp64>>32)
-	buf[21] = uint16(tmp64>>48)
+	buf[23] = uint16(tmp64 >> 16)
+	buf[22] = uint16(tmp64 >> 32)
+	buf[21] = uint16(tmp64 >> 48)
 	// StringASCII8
 	length := len(m.StringASCII8)
 	for i := 0; i < length; i+=2 {
@@ -224,7 +224,7 @@ func (m BigEndianHighWordAllCustom) Marshal() ([]uint16, error) {
 		b1 := m.StringASCII8[i]
 		var b2 byte
 		if i+1 < length {b2 = m.StringASCII8[i+1]}
-		buf[25+i/2] = uint16(b1) | uint16(b2)<<8
+		buf[25+i/2] = uint16(b1) | uint16(b2) <<8
 	}
 	// StringASCII16
 	for i := 0; i < len(m.StringASCII16); i++ {
@@ -263,15 +263,15 @@ func (m *BigEndianHighWordAllCustom) Unmarshal(buf []uint16) error {
 	// Uint8Low
 	m.Uint8Low = CustomUint8(buf[0])
 	// Uint8High
-	m.Uint8High = CustomUint8(buf[0]>>8)
+	m.Uint8High = CustomUint8(buf[0] >> 8)
 	// ByteLow
 	m.ByteLow = CustomByte(buf[1])
 	// ByteHigh
-	m.ByteHigh = CustomByte(buf[1]>>8)
+	m.ByteHigh = CustomByte(buf[1] >> 8)
 	// Int8Low
 	m.Int8Low = CustomInt8(buf[2])
 	// Int8High
-	m.Int8High = CustomInt8(buf[2]>>8)
+	m.Int8High = CustomInt8(buf[2] >> 8)
 	// Uint16
 	m.Uint16 = CustomUint16(buf[3])
 	// Int16
@@ -279,7 +279,7 @@ func (m *BigEndianHighWordAllCustom) Unmarshal(buf []uint16) error {
 	// Uint32
 	m.Uint32 = CustomUint32(buf[6]) | CustomUint32(buf[5]) << 16
 	// Int32
-	m.Int32 = CustomInt32(int32(buf[8]) | int32(buf[7])<<16)
+	m.Int32 = CustomInt32(int32(buf[8]) | int32(buf[7]) << 16)
 	// Uint64
 	m.Uint64 = CustomUint64(buf[12]) | CustomUint64(buf[11]) << 16 | CustomUint64(buf[10]) << 32 | CustomUint64(buf[9]) << 48
 	// Int64
@@ -340,45 +340,45 @@ func (m BigEndianHighWordAllCustomExtern) Marshal() ([]uint16, error) {
 	// Uint8Low
 	buf[0] = buf[0] | uint16(m.Uint8Low)
 	// Uint8High
-	buf[0] = buf[0] | uint16(m.Uint8High)<<8
+	buf[0] = buf[0] | uint16(m.Uint8High) << 8
 	// ByteLow
 	buf[1] = buf[1] | uint16(m.ByteLow)
 	// ByteHigh
-	buf[1] = buf[1] | uint16(m.ByteHigh)<<8
+	buf[1] = buf[1] | uint16(m.ByteHigh) << 8
 	// Int8Low
 	buf[2] = buf[2] | uint16(uint8(m.Int8Low))
 	// Int8High
-	buf[2] = buf[2] | uint16(uint8(m.Int8High))<<8
+	buf[2] = buf[2] | uint16(uint8(m.Int8High)) << 8
 	// Uint16
 	buf[3] = uint16(m.Uint16)
 	// Int16
 	buf[4] = uint16(m.Int16)
 	// Uint32
 	buf[6] = uint16(m.Uint32)
-	buf[5] = uint16(m.Uint32>>16)
+	buf[5] = uint16(m.Uint32 >> 16)
 	// Int32
 	buf[8] = uint16(m.Int32)
-	buf[7] = uint16(m.Int32>>16)
+	buf[7] = uint16(m.Int32 >> 16)
 	// Uint64
 	buf[12] = uint16(m.Uint64)
-	buf[11] = uint16(m.Uint64>>16)
-	buf[10] = uint16(m.Uint64>>32)
-	buf[9] = uint16(m.Uint64>>48)
+	buf[11] = uint16(m.Uint64 >> 16)
+	buf[10] = uint16(m.Uint64 >> 32)
+	buf[9] = uint16(m.Uint64 >> 48)
 	// Int64
 	buf[16] = uint16(m.Int64)
-	buf[15] = uint16(m.Int64>>16)
-	buf[14] = uint16(m.Int64>>32)
-	buf[13] = uint16(m.Int64>>48)
+	buf[15] = uint16(m.Int64 >> 16)
+	buf[14] = uint16(m.Int64 >> 32)
+	buf[13] = uint16(m.Int64 >> 48)
 	// Float32
 	tmp32 = math.Float32bits(float32(m.Float32))
 	buf[18] = uint16(tmp32)
-	buf[17] = uint16(tmp32>>16)
+	buf[17] = uint16(tmp32 >> 16)
 	// Float64
 	tmp64 = math.Float64bits(float64(m.Float64))
 	buf[24] = uint16(tmp64)
-	buf[23] = uint16(tmp64>>16)
-	buf[22] = uint16(tmp64>>32)
-	buf[21] = uint16(tmp64>>48)
+	buf[23] = uint16(tmp64 >> 16)
+	buf[22] = uint16(tmp64 >> 32)
+	buf[21] = uint16(tmp64 >> 48)
 	// StringASCII8
 	length := len(m.StringASCII8)
 	for i := 0; i < length; i+=2 {
@@ -386,7 +386,7 @@ func (m BigEndianHighWordAllCustomExtern) Marshal() ([]uint16, error) {
 		b1 := m.StringASCII8[i]
 		var b2 byte
 		if i+1 < length {b2 = m.StringASCII8[i+1]}
-		buf[25+i/2] = uint16(b1) | uint16(b2)<<8
+		buf[25+i/2] = uint16(b1) | uint16(b2) <<8
 	}
 	// StringASCII16
 	for i := 0; i < len(m.StringASCII16); i++ {
@@ -425,15 +425,15 @@ func (m *BigEndianHighWordAllCustomExtern) Unmarshal(buf []uint16) error {
 	// Uint8Low
 	m.Uint8Low = extern.CustomUint8(buf[0])
 	// Uint8High
-	m.Uint8High = extern.CustomUint8(buf[0]>>8)
+	m.Uint8High = extern.CustomUint8(buf[0] >> 8)
 	// ByteLow
 	m.ByteLow = extern.CustomByte(buf[1])
 	// ByteHigh
-	m.ByteHigh = extern.CustomByte(buf[1]>>8)
+	m.ByteHigh = extern.CustomByte(buf[1] >> 8)
 	// Int8Low
 	m.Int8Low = extern.CustomInt8(buf[2])
 	// Int8High
-	m.Int8High = extern.CustomInt8(buf[2]>>8)
+	m.Int8High = extern.CustomInt8(buf[2] >> 8)
 	// Uint16
 	m.Uint16 = extern.CustomUint16(buf[3])
 	// Int16
@@ -441,7 +441,7 @@ func (m *BigEndianHighWordAllCustomExtern) Unmarshal(buf []uint16) error {
 	// Uint32
 	m.Uint32 = extern.CustomUint32(buf[6]) | extern.CustomUint32(buf[5]) << 16
 	// Int32
-	m.Int32 = extern.CustomInt32(int32(buf[8]) | int32(buf[7])<<16)
+	m.Int32 = extern.CustomInt32(int32(buf[8]) | int32(buf[7]) << 16)
 	// Uint64
 	m.Uint64 = extern.CustomUint64(buf[12]) | extern.CustomUint64(buf[11]) << 16 | extern.CustomUint64(buf[10]) << 32 | extern.CustomUint64(buf[9]) << 48
 	// Int64

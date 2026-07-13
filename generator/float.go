@@ -71,7 +71,7 @@ func (f FieldFloat32) Marshaler() string {
 
 	offsets := f.calcWordOffsets32()
 	fmt.Fprintf(&sb, "\tbuf[%d] = %s\n", offsets[0], f.encodeWord16("tmp32", ""))
-	fmt.Fprintf(&sb, "\tbuf[%d] = %s\n", offsets[1], f.encodeWord16("tmp32", ">>16"))
+	fmt.Fprintf(&sb, "\tbuf[%d] = %s\n", offsets[1], f.encodeWord16("tmp32", " >> 16"))
 
 	return sb.String()
 }
@@ -108,9 +108,9 @@ func (f FieldFloat64) Marshaler() string {
 
 	offsets := f.calcWordOffsets64()
 	fmt.Fprintf(&sb, "\tbuf[%d] = %s\n", offsets[0], f.encodeWord16("tmp64", ""))
-	fmt.Fprintf(&sb, "\tbuf[%d] = %s\n", offsets[1], f.encodeWord16("tmp64", ">>16"))
-	fmt.Fprintf(&sb, "\tbuf[%d] = %s\n", offsets[2], f.encodeWord16("tmp64", ">>32"))
-	fmt.Fprintf(&sb, "\tbuf[%d] = %s\n", offsets[3], f.encodeWord16("tmp64", ">>48"))
+	fmt.Fprintf(&sb, "\tbuf[%d] = %s\n", offsets[1], f.encodeWord16("tmp64", " >> 16"))
+	fmt.Fprintf(&sb, "\tbuf[%d] = %s\n", offsets[2], f.encodeWord16("tmp64", " >> 32"))
+	fmt.Fprintf(&sb, "\tbuf[%d] = %s\n", offsets[3], f.encodeWord16("tmp64", " >> 48"))
 
 	return sb.String()
 }

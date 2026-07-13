@@ -119,7 +119,7 @@ func (f FieldUint8) Marshaler() string {
 	shift := ""
 	if (*f.Tags.Encoding == BigEndian && *f.Tags.Byte == High) ||
 		(*f.Tags.Encoding == LittleEndian && *f.Tags.Byte == Low) {
-		shift = "<<8"
+		shift = " << 8"
 	}
 
 	fmt.Fprintf(&sb, "\tbuf[%d] = buf[%d] | uint16(m.%s)%s\n",
@@ -139,7 +139,7 @@ func (f FieldUint8) Unmarshaler() string {
 	shift := ""
 	if (*f.Tags.Encoding == BigEndian && *f.Tags.Byte == High) ||
 		(*f.Tags.Encoding == LittleEndian && *f.Tags.Byte == Low) {
-		shift = ">>8"
+		shift = " >> 8"
 	}
 
 	if f.IsCustomType {
@@ -163,7 +163,7 @@ func (f FieldInt8) Marshaler() string {
 	shift := ""
 	if (*f.Tags.Encoding == BigEndian && *f.Tags.Byte == High) ||
 		(*f.Tags.Encoding == LittleEndian && *f.Tags.Byte == Low) {
-		shift = "<<8"
+		shift = " << 8"
 	}
 
 	fmt.Fprintf(&sb, "\tbuf[%d] = buf[%d] | uint16(uint8(m.%s))%s\n",
@@ -183,7 +183,7 @@ func (f FieldInt8) Unmarshaler() string {
 	shift := ""
 	if (*f.Tags.Encoding == BigEndian && *f.Tags.Byte == High) ||
 		(*f.Tags.Encoding == LittleEndian && *f.Tags.Byte == Low) {
-		shift = ">>8"
+		shift = " >> 8"
 	}
 
 	if f.IsCustomType {
@@ -321,7 +321,7 @@ func (f FieldUint32) Marshaler() string {
 		&sb,
 		"\tbuf[%d] = %s\n",
 		offsets[1],
-		f.encodeWord16(fmt.Sprintf("m.%s", f.Name), ">>16"),
+		f.encodeWord16(fmt.Sprintf("m.%s", f.Name), " >> 16"),
 	)
 
 	return sb.String()
@@ -371,7 +371,7 @@ func (f FieldInt32) Marshaler() string {
 		&sb,
 		"\tbuf[%d] = %s\n",
 		offsets[1],
-		f.encodeWord16(fmt.Sprintf("m.%s", f.Name), ">>16"),
+		f.encodeWord16(fmt.Sprintf("m.%s", f.Name), " >> 16"),
 	)
 
 	return sb.String()
@@ -388,13 +388,13 @@ func (f FieldInt32) Unmarshaler() string {
 	highWordCode := f.decodeWord16(offsets[1])
 
 	if f.IsCustomType {
-		fmt.Fprintf(&sb, "\tm.%s = %s(int32(%s) | int32(%s)<<16)\n",
+		fmt.Fprintf(&sb, "\tm.%s = %s(int32(%s) | int32(%s) << 16)\n",
 			f.Name,
 			f.CustomType,
 			lowWordCode,
 			highWordCode)
 	} else {
-		fmt.Fprintf(&sb, "\tm.%s = int32(%s) | int32(%s)<<16\n",
+		fmt.Fprintf(&sb, "\tm.%s = int32(%s) | int32(%s) << 16\n",
 			f.Name,
 			lowWordCode,
 			highWordCode)
@@ -424,19 +424,19 @@ func (f FieldUint64) Marshaler() string {
 		&sb,
 		"\tbuf[%d] = %s\n",
 		offsets[1],
-		f.encodeWord16(fmt.Sprintf("m.%s", f.Name), ">>16"),
+		f.encodeWord16(fmt.Sprintf("m.%s", f.Name), " >> 16"),
 	)
 	fmt.Fprintf(
 		&sb,
 		"\tbuf[%d] = %s\n",
 		offsets[2],
-		f.encodeWord16(fmt.Sprintf("m.%s", f.Name), ">>32"),
+		f.encodeWord16(fmt.Sprintf("m.%s", f.Name), " >> 32"),
 	)
 	fmt.Fprintf(
 		&sb,
 		"\tbuf[%d] = %s\n",
 		offsets[3],
-		f.encodeWord16(fmt.Sprintf("m.%s", f.Name), ">>48"),
+		f.encodeWord16(fmt.Sprintf("m.%s", f.Name), " >> 48"),
 	)
 
 	return sb.String()
@@ -492,19 +492,19 @@ func (f FieldInt64) Marshaler() string {
 		&sb,
 		"\tbuf[%d] = %s\n",
 		offsets[1],
-		f.encodeWord16(fmt.Sprintf("m.%s", f.Name), ">>16"),
+		f.encodeWord16(fmt.Sprintf("m.%s", f.Name), " >> 16"),
 	)
 	fmt.Fprintf(
 		&sb,
 		"\tbuf[%d] = %s\n",
 		offsets[2],
-		f.encodeWord16(fmt.Sprintf("m.%s", f.Name), ">>32"),
+		f.encodeWord16(fmt.Sprintf("m.%s", f.Name), " >> 32"),
 	)
 	fmt.Fprintf(
 		&sb,
 		"\tbuf[%d] = %s\n",
 		offsets[3],
-		f.encodeWord16(fmt.Sprintf("m.%s", f.Name), ">>48"),
+		f.encodeWord16(fmt.Sprintf("m.%s", f.Name), " >> 48"),
 	)
 
 	return sb.String()

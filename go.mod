@@ -3,8 +3,8 @@ module github.com/Nocccer/protoreg
 go 1.26.0
 
 require (
-	github.com/lmittmann/tint v1.1.3
-	golang.org/x/tools v0.46.0
+	github.com/lmittmann/tint v1.2.0
+	golang.org/x/tools v0.48.0
 )
 
 require (
@@ -15,6 +15,6 @@ require (
 
 require (
 	github.com/stretchr/testify v1.11.1
-	golang.org/x/mod v0.37.0 // indirect
-	golang.org/x/sync v0.21.0 // indirect
+	golang.org/x/mod v0.38.0 // indirect
+	golang.org/x/sync v0.22.0 // indirect
 )
