@@ -22,7 +22,7 @@ Basic generation and a comprehensive test-suite are included. See the
 ## Installation
 
 ```bash
-go install github.com/Nocccer/protoreg@latest
+go install github.com/nocccer/protoreg@latest
 ```
 
 ## Usage

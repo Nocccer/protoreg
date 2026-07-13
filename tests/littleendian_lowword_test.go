@@ -3,7 +3,7 @@ package tests_test
 import (
 	"testing"
 
-	"github.com/Nocccer/protoreg/tests"
+	"github.com/nocccer/protoreg/tests"
 	"github.com/stretchr/testify/suite"
 )
 

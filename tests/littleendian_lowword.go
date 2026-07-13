@@ -1,6 +1,6 @@
 package tests
 
-import "github.com/Nocccer/protoreg/tests/extern"
+import "github.com/nocccer/protoreg/tests/extern"
 
 //go:generate go run ../main.go -type=LittleEndianLowWord,LittleEndianLowWordAllCustom,LittleEndianLowWordAllCustomExtern -v
 

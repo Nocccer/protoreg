@@ -4,7 +4,7 @@ package tests
 import (
 	"math"
 
-	"github.com/Nocccer/protoreg/tests/extern"
+	"github.com/nocccer/protoreg/tests/extern"
 )
 
 func (m BigEndianLowWord) Marshal() ([]uint16, error) {

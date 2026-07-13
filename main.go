@@ -136,8 +136,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/Nocccer/protoreg/generator"
 	"github.com/lmittmann/tint"
+	"github.com/nocccer/protoreg/generator"
 )
 
 // main is the entry point for the protoreg CLI tool. It parses command-line flags,
@@ -159,7 +159,7 @@ func main() {
 		level = slog.LevelDebug
 	}
 
-	log := slog.New(tint.NewHandler(os.Stderr, &tint.Options{
+	log := slog.New(tint.NewTextHandler(os.Stderr, &tint.Options{
 		Level: level,
 	}))
 

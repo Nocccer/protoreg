@@ -5,7 +5,7 @@ import (
 	"math"
 	"math/bits"
 
-	"github.com/Nocccer/protoreg/tests/extern"
+	"github.com/nocccer/protoreg/tests/extern"
 )
 
 func (m LittleEndianLowWord) Marshal() ([]uint16, error) {

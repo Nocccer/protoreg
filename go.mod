@@ -1,4 +1,4 @@
-module github.com/Nocccer/protoreg
+module github.com/nocccer/protoreg
 
 go 1.26.0
 
