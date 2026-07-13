@@ -282,6 +282,11 @@ func (g *ProtoRegGen) genFromStruct(
 			sb.WriteString("\tvar i int\n")
 		}
 
+		// Check if we need to declare tmp16 variable
+		if strings.Contains(sbFields.String(), "tmp16 = ") {
+			sb.WriteString("\tvar tmp16 uint16\n")
+		}
+
 		// Check if we need to declare tmp32 variable
 		if strings.Contains(sbFields.String(), "tmp32 = ") {
 			sb.WriteString("\tvar tmp32 uint32\n")
@@ -316,6 +321,11 @@ func (g *ProtoRegGen) genFromStruct(
 		// Check if we need to declare the runes slice
 		if strings.Contains(sbFields.String(), "runes =") {
 			sb.WriteString("\tvar runes []rune\n")
+		}
+
+		// Check if we need to declare tmp16 variable
+		if strings.Contains(sbFields.String(), "tmp16 = ") {
+			sb.WriteString("\tvar tmp16 uint16\n")
 		}
 
 		// Check if we need to declare tmp32 variable
@@ -362,19 +372,22 @@ func (g *ProtoRegGen) extractField(
 		return NewGenResult{}, fmt.Errorf("failed to extract tags for %s: %v", name, err)
 	}
 
-	if strings.Contains(t.Type.Underlying().String(), "int") ||
-		strings.Contains(t.Type.Underlying().String(), "byte") {
+	underlyingStr := t.Type.Underlying().String()
+	switch {
+	case strings.Contains(underlyingStr, "int") || strings.Contains(underlyingStr, "byte"):
 		return g.newIntegerGen(name, t.Type, tag)
-	} else if strings.Contains(t.Type.Underlying().String(), "float") {
+	case strings.Contains(underlyingStr, "float"):
 		return g.newFloatGen(name, t.Type, tag)
-	} else if t.Type.Underlying().String() == "string" {
+	case underlyingStr == "string":
 		return g.newStringGen(name, t.Type, tag)
+	case underlyingStr == "bool":
+		return g.newBoolGen(name, t.Type, tag)
+	default:
+		return NewGenResult{}, fmt.Errorf(
+			"unsupported underlying field type: %s",
+			t.Type.Underlying().String(),
+		)
 	}
-
-	return NewGenResult{}, fmt.Errorf(
-		"unsupported underlying field type: %s",
-		t.Type.Underlying().String(),
-	)
 }
 
 func (g *ProtoRegGen) extractOpts(tagStr string) error {

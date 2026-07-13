@@ -38,6 +38,10 @@ func (s *LittleEndianHighWordTestSuite) SetupTest() {
 		StringASCII8:  "TestData1",
 		StringASCII16: "TestData2",
 		StringUTF816:  "TestDäta3", // add utf8 char
+		Bool:          true,
+		Bit1:          false,
+		Bit3:          false,
+		Bit14:         true,
 	}
 }
 
@@ -76,6 +80,10 @@ func BenchmarkLittleEndianHighWordMarshal(b *testing.B) {
 		StringASCII8:  "TestData1",
 		StringASCII16: "TestData2",
 		StringUTF816:  "TestDäta3", // add utf8 char
+		Bool:          true,
+		Bit1:          false,
+		Bit3:          false,
+		Bit14:         true,
 	}
 
 	for b.Loop() {
@@ -106,6 +114,10 @@ func BenchmarkLittleEndianHighWordUnmarshal(b *testing.B) {
 		StringASCII8:  "TestData1",
 		StringASCII16: "TestData2",
 		StringUTF816:  "TestDäta3", // add utf8 char
+		Bool:          true,
+		Bit1:          false,
+		Bit3:          false,
+		Bit14:         true,
 	}
 
 	reg, err := test.Marshal()
@@ -150,6 +162,10 @@ func (s *LittleEndianHighWordAllCustomTestSuite) SetupTest() {
 		StringASCII8:  "TestData1",
 		StringASCII16: "TestData2",
 		StringUTF816:  "TestDäta3", // add utf8 char
+		Bool:          true,
+		Bit1:          false,
+		Bit3:          false,
+		Bit14:         true,
 	}
 }
 
@@ -189,6 +205,10 @@ func BenchmarkLittleEndianHighWordAllCustomMarshal(b *testing.B) {
 		StringASCII8:  "TestData1",
 		StringASCII16: "TestData2",
 		StringUTF816:  "TestDäta3", // add utf8 char
+		Bool:          true,
+		Bit1:          false,
+		Bit3:          false,
+		Bit14:         true,
 	}
 
 	for b.Loop() {
@@ -219,6 +239,10 @@ func BenchmarkLittleEndianHighWordAllCustomUnmarshal(b *testing.B) {
 		StringASCII8:  "TestData1",
 		StringASCII16: "TestData2",
 		StringUTF816:  "TestDäta3", // add utf8 char
+		Bool:          true,
+		Bit1:          false,
+		Bit3:          false,
+		Bit14:         true,
 	}
 
 	reg, err := test.Marshal()
@@ -263,6 +287,10 @@ func (s *LittleEndianHighWordAllCustomExternTestSuite) SetupTest() {
 		StringASCII8:  "TestData1",
 		StringASCII16: "TestData2",
 		StringUTF816:  "TestDäta3", // add utf8 char
+		Bool:          true,
+		Bit1:          false,
+		Bit3:          false,
+		Bit14:         true,
 	}
 }
 
@@ -302,6 +330,10 @@ func BenchmarkLittleEndianHighWordAllCustomExternMarshal(b *testing.B) {
 		StringASCII8:  "TestData1",
 		StringASCII16: "TestData2",
 		StringUTF816:  "TestDäta3", // add utf8 char
+		Bool:          true,
+		Bit1:          false,
+		Bit3:          false,
+		Bit14:         true,
 	}
 
 	for b.Loop() {
@@ -332,6 +364,10 @@ func BenchmarkLittleEndianHighWordAllCustomExternUnmarshal(b *testing.B) {
 		StringASCII8:  "TestData1",
 		StringASCII16: "TestData2",
 		StringUTF816:  "TestDäta3", // add utf8 char
+		Bool:          true,
+		Bit1:          false,
+		Bit3:          false,
+		Bit14:         true,
 	}
 
 	reg, err := test.Marshal()

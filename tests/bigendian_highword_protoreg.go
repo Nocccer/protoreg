@@ -8,8 +8,9 @@ import (
 )
 
 func (m BigEndianHighWord) Marshal() ([]uint16, error) {
-	buf := make([]uint16, 52)
+	buf := make([]uint16, 54)
 	var i int
+	var tmp16 uint16
 	var tmp32 uint32
 	var tmp64 uint64
 	// Uint8Low
@@ -75,6 +76,18 @@ func (m BigEndianHighWord) Marshal() ([]uint16, error) {
 		buf[43+i] = uint16(r)
 		i++
 	}
+	// Bool
+	tmp16 = 0; if m.Bool {tmp16 = 1}
+	buf[52] |= tmp16 << 0
+	// Bit1
+	tmp16 = 0; if m.Bit1 {tmp16 = 1}
+	buf[53] |= tmp16 << 1
+	// Bit3
+	tmp16 = 0; if m.Bit3 {tmp16 = 1}
+	buf[53] |= tmp16 << 3
+	// Bit14
+	tmp16 = 0; if m.Bit14 {tmp16 = 1}
+	buf[53] |= tmp16 << 14
 
 	return buf, nil
 }
@@ -82,6 +95,7 @@ func (m BigEndianHighWord) Marshal() ([]uint16, error) {
 func (m *BigEndianHighWord) Unmarshal(buf []uint16) error {
 	var bytes []byte
 	var runes []rune
+	var tmp16 uint16
 	var tmp32 uint32
 	var tmp64 uint64
 	// Uint8Low
@@ -139,13 +153,26 @@ func (m *BigEndianHighWord) Unmarshal(buf []uint16) error {
 		runes[i] = rune(v)
 	}
 	m.StringUTF816 = string(runes)
+	// Bool
+	tmp16 = buf[52] & 0x0001
+	if tmp16 != 0 { m.Bool = true } else { m.Bool = false }
+	// Bit1
+	tmp16 = buf[53] & 0x0002
+	if tmp16 != 0 { m.Bit1 = true } else { m.Bit1 = false }
+	// Bit3
+	tmp16 = buf[53] & 0x0008
+	if tmp16 != 0 { m.Bit3 = true } else { m.Bit3 = false }
+	// Bit14
+	tmp16 = buf[53] & 0x4000
+	if tmp16 != 0 { m.Bit14 = true } else { m.Bit14 = false }
 
 	return nil
 }
 
 func (m BigEndianHighWordAllCustom) Marshal() ([]uint16, error) {
-	buf := make([]uint16, 52)
+	buf := make([]uint16, 54)
 	var i int
+	var tmp16 uint16
 	var tmp32 uint32
 	var tmp64 uint64
 	// Uint8Low
@@ -211,6 +238,18 @@ func (m BigEndianHighWordAllCustom) Marshal() ([]uint16, error) {
 		buf[43+i] = uint16(r)
 		i++
 	}
+	// Bool
+	tmp16 = 0; if m.Bool {tmp16 = 1}
+	buf[52] |= tmp16 << 0
+	// Bit1
+	tmp16 = 0; if m.Bit1 {tmp16 = 1}
+	buf[53] |= tmp16 << 1
+	// Bit3
+	tmp16 = 0; if m.Bit3 {tmp16 = 1}
+	buf[53] |= tmp16 << 3
+	// Bit14
+	tmp16 = 0; if m.Bit14 {tmp16 = 1}
+	buf[53] |= tmp16 << 14
 
 	return buf, nil
 }
@@ -218,6 +257,7 @@ func (m BigEndianHighWordAllCustom) Marshal() ([]uint16, error) {
 func (m *BigEndianHighWordAllCustom) Unmarshal(buf []uint16) error {
 	var bytes []byte
 	var runes []rune
+	var tmp16 uint16
 	var tmp32 uint32
 	var tmp64 uint64
 	// Uint8Low
@@ -275,13 +315,26 @@ func (m *BigEndianHighWordAllCustom) Unmarshal(buf []uint16) error {
 		runes[i] = rune(v)
 	}
 	m.StringUTF816 = CustomString(runes)
+	// Bool
+	tmp16 = buf[52] & 0x0001
+	if tmp16 != 0 { m.Bool = true } else { m.Bool = false }
+	// Bit1
+	tmp16 = buf[53] & 0x0002
+	if tmp16 != 0 { m.Bit1 = true } else { m.Bit1 = false }
+	// Bit3
+	tmp16 = buf[53] & 0x0008
+	if tmp16 != 0 { m.Bit3 = true } else { m.Bit3 = false }
+	// Bit14
+	tmp16 = buf[53] & 0x4000
+	if tmp16 != 0 { m.Bit14 = true } else { m.Bit14 = false }
 
 	return nil
 }
 
 func (m BigEndianHighWordAllCustomExtern) Marshal() ([]uint16, error) {
-	buf := make([]uint16, 52)
+	buf := make([]uint16, 54)
 	var i int
+	var tmp16 uint16
 	var tmp32 uint32
 	var tmp64 uint64
 	// Uint8Low
@@ -347,6 +400,18 @@ func (m BigEndianHighWordAllCustomExtern) Marshal() ([]uint16, error) {
 		buf[43+i] = uint16(r)
 		i++
 	}
+	// Bool
+	tmp16 = 0; if m.Bool {tmp16 = 1}
+	buf[52] |= tmp16 << 0
+	// Bit1
+	tmp16 = 0; if m.Bit1 {tmp16 = 1}
+	buf[53] |= tmp16 << 1
+	// Bit3
+	tmp16 = 0; if m.Bit3 {tmp16 = 1}
+	buf[53] |= tmp16 << 3
+	// Bit14
+	tmp16 = 0; if m.Bit14 {tmp16 = 1}
+	buf[53] |= tmp16 << 14
 
 	return buf, nil
 }
@@ -354,6 +419,7 @@ func (m BigEndianHighWordAllCustomExtern) Marshal() ([]uint16, error) {
 func (m *BigEndianHighWordAllCustomExtern) Unmarshal(buf []uint16) error {
 	var bytes []byte
 	var runes []rune
+	var tmp16 uint16
 	var tmp32 uint32
 	var tmp64 uint64
 	// Uint8Low
@@ -411,6 +477,18 @@ func (m *BigEndianHighWordAllCustomExtern) Unmarshal(buf []uint16) error {
 		runes[i] = rune(v)
 	}
 	m.StringUTF816 = extern.CustomString(runes)
+	// Bool
+	tmp16 = buf[52] & 0x0001
+	if tmp16 != 0 { m.Bool = true } else { m.Bool = false }
+	// Bit1
+	tmp16 = buf[53] & 0x0002
+	if tmp16 != 0 { m.Bit1 = true } else { m.Bit1 = false }
+	// Bit3
+	tmp16 = buf[53] & 0x0008
+	if tmp16 != 0 { m.Bit3 = true } else { m.Bit3 = false }
+	// Bit14
+	tmp16 = buf[53] & 0x4000
+	if tmp16 != 0 { m.Bit14 = true } else { m.Bit14 = false }
 
 	return nil
 }

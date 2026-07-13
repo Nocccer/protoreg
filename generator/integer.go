@@ -39,10 +39,7 @@ func (g *ProtoRegGen) newIntegerGen(name string, typ types.Type, tags Tags) (New
 	switch typ.Underlying().String() {
 	case "uint8", "int8", "byte":
 		if field.Tags.Byte == nil {
-			return NewGenResult{}, fmt.Errorf(
-				`missing "byte" tag for %s`,
-				name,
-			)
+			field.Tags.Byte = new(Low)
 		}
 		field.Tags.Size = new(1)
 	case "uint16", "int16":

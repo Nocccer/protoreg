@@ -143,7 +143,7 @@ func extractTags(tagStr string) (Tags, error) {
 			}
 		case "bit":
 			bit, err := strconv.Atoi(kv[1])
-			if err != nil || bit < 0 {
+			if err != nil || bit < 0 || bit > 15 {
 				return Tags{}, fmt.Errorf("invalid bit value: %q", kv[1])
 			}
 			t.Bit = &bit

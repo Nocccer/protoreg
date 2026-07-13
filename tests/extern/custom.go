@@ -13,4 +13,5 @@ type (
 	CustomFloat32 float32
 	CustomFloat64 float64
 	CustomString  string
+	CustomBool    bool
 )
