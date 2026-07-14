@@ -92,6 +92,37 @@ type Tags struct {
 	Bit          *int
 }
 
+func (t Tags) DeepCopy() Tags {
+	var copy Tags
+
+	if t.Encoding != nil {
+		copy.Encoding = new(*t.Encoding)
+	}
+	if t.WordOrder != nil {
+		copy.WordOrder = new(*t.WordOrder)
+	}
+	if t.Offset != nil {
+		copy.Offset = new(*t.Offset)
+	}
+	if t.Size != nil {
+		copy.Size = new(*t.Size)
+	}
+	if t.Char != nil {
+		copy.Char = new(*t.Char)
+	}
+	if t.CharEncoding != nil {
+		copy.CharEncoding = new(*t.CharEncoding)
+	}
+	if t.Byte != nil {
+		copy.Byte = new(*t.Byte)
+	}
+	if t.Bit != nil {
+		copy.Bit = new(*t.Bit)
+	}
+
+	return copy
+}
+
 func extractTags(tagStr string) (Tags, error) {
 	var t Tags
 	tags := strings.SplitSeq(tagStr, ",")

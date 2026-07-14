@@ -6,13 +6,13 @@ based protocols (slices of `uint16` or `uint32`) commonly used in IoT and
 industrial protocols such as Modbus.
 
 This repository contains the generator implementation and tests. See
-[`cmd/main.go`](cmd/main.go) for the CLI usage and available options.
+[main.go](main.go) for the CLI usage and available options.
 
 **Highlights**
 
 - Generate `Marshal()` / `Unmarshal()` for plain and custom-typed fields.
 - Control byte order and word order per-struct via tags.
-- Support for fixed-size strings, numeric types, and single-bit boolean fields.
+- Support for fixed-size strings, numeric types, single-bit boolean fields, and fixed-size arrays of integers, floats, and booleans.
 
 **Status**
 
@@ -50,7 +50,7 @@ Configuration is provided using struct tags with the selected tag key
 (`protoreg` by default). Tags use `key=value` pairs separated by commas.
 
 Examples and the complete tag reference are documented in
-[`cmd/main.go`](cmd/main.go). Important tags include:
+[main.go](main.go). Important tags include:
 
 - `offset` (required): zero-based buffer offset in `uint16` units.
 - `size` (strings): number of `uint16` elements reserved for the field.
@@ -83,6 +83,21 @@ type Flags struct {
 The generator emits a fixed hex mask for known `bit` positions (e.g.
 `bit=3` -> `0x0008`) so generated `Unmarshal` code uses constants instead of
 computing shifts at runtime.
+
+Fixed-size arrays of integers, floats, and booleans:
+
+```go
+type Packet struct {
+  _ struct{} `protoreg:"encoding=big"`
+  Values  [4]uint16  `protoreg:"offset=0"`
+  Counts  [3]uint32  `protoreg:"offset=4"`
+  Samples [5]float32 `protoreg:"offset=10"`
+  Flags   [4]bool    `protoreg:"offset=20"`
+}
+```
+
+Arrays use the Go array length to determine how many elements are encoded and
+rely on the element type for the underlying width.
 
 ## Running tests
 

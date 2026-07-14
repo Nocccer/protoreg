@@ -4,7 +4,8 @@
 // methods for Go structs annotated with protoreg tags. It supports flexible
 // encoding configurations through struct field tags, including byte order
 // (big-endian/little-endian), word order (high-word-first/low-word-first),
-// and generation modes (marshal only, unmarshal only, or both).
+// generation modes (marshal only, unmarshal only, or both), and fixed-size
+// arrays of integers, booleans, and floating-point values.
 //
 // Usage:
 //
@@ -65,9 +66,13 @@
 //	    Zero-based offset in the buffer (in uint16 units).
 //	    Example: offset=0, offset=5
 //
-//	size (for strings and arrays)
+//	size (for strings)
 //	    Number of uint16 elements to use for the field.
 //	    Example: size=8 reserves 8 uint16s (16 bytes for char8, 8 bytes for char16)
+//
+//	Arrays are inferred from the Go array declaration. Fixed-size arrays of
+//	integers, booleans, and floating-point values are supported; no extra tag
+//	is required beyond the usual offset tag.
 //
 //	char (for strings, default: "8")
 //	    Character width for string fields.
@@ -107,6 +112,16 @@
 //	  _ struct{} `protoreg:"encoding=big,char=8"`
 //	  Name   string `protoreg:"offset=0,size=16,char=8"`
 //	  Label  string `protoreg:"offset=16,size=8,char=16,charencoding=utf8"`
+//	}
+//
+// ## Fixed-size array support
+//
+//	type ArrayData struct {
+//	  _ struct{} `protoreg:"encoding=big"`
+//	  Values  [4]uint16  `protoreg:"offset=0"`
+//	  Counts  [3]uint32  `protoreg:"offset=4"`
+//	  Samples [5]float32 `protoreg:"offset=10"`
+//	  Flags   [4]bool    `protoreg:"offset=20"`
 //	}
 //
 // ## Custom function names

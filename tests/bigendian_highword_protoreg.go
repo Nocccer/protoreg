@@ -8,7 +8,7 @@ import (
 )
 
 func (m BigEndianHighWord) Marshal() ([]uint16, error) {
-	buf := make([]uint16, 54)
+	buf := make([]uint16, 94)
 	var i int
 	var tmp16 uint16
 	var tmp32 uint32
@@ -88,6 +88,66 @@ func (m BigEndianHighWord) Marshal() ([]uint16, error) {
 	// Bit14
 	tmp16 = 0; if m.Bit14 {tmp16 = 1}
 	buf[53] |= tmp16 << 14
+	// Uint16Array[0]
+	buf[54] = m.Uint16Array[0]
+	// Uint16Array[1]
+	buf[55] = m.Uint16Array[1]
+	// Uint16Array[2]
+	buf[56] = m.Uint16Array[2]
+	// Uint16Array[3]
+	buf[57] = m.Uint16Array[3]
+	// Uint16Array[4]
+	buf[58] = m.Uint16Array[4]
+	// Uint32Array[0]
+	buf[60] = uint16(m.Uint32Array[0])
+	buf[59] = uint16(m.Uint32Array[0] >> 16)
+	// Uint32Array[1]
+	buf[64] = uint16(m.Uint32Array[1])
+	buf[63] = uint16(m.Uint32Array[1] >> 16)
+	// Uint32Array[2]
+	buf[68] = uint16(m.Uint32Array[2])
+	buf[67] = uint16(m.Uint32Array[2] >> 16)
+	// Uint32Array[3]
+	buf[72] = uint16(m.Uint32Array[3])
+	buf[71] = uint16(m.Uint32Array[3] >> 16)
+	// Uint32Array[4]
+	buf[76] = uint16(m.Uint32Array[4])
+	buf[75] = uint16(m.Uint32Array[4] >> 16)
+	// Float32Array[0]
+	tmp32 = math.Float32bits(float32(m.Float32Array[0]))
+	buf[80] = uint16(tmp32)
+	buf[79] = uint16(tmp32 >> 16)
+	// Float32Array[1]
+	tmp32 = math.Float32bits(float32(m.Float32Array[1]))
+	buf[82] = uint16(tmp32)
+	buf[81] = uint16(tmp32 >> 16)
+	// Float32Array[2]
+	tmp32 = math.Float32bits(float32(m.Float32Array[2]))
+	buf[84] = uint16(tmp32)
+	buf[83] = uint16(tmp32 >> 16)
+	// Float32Array[3]
+	tmp32 = math.Float32bits(float32(m.Float32Array[3]))
+	buf[86] = uint16(tmp32)
+	buf[85] = uint16(tmp32 >> 16)
+	// Float32Array[4]
+	tmp32 = math.Float32bits(float32(m.Float32Array[4]))
+	buf[88] = uint16(tmp32)
+	buf[87] = uint16(tmp32 >> 16)
+	// BoolArray[0]
+	tmp16 = 0; if m.BoolArray[0] {tmp16 = 1}
+	buf[89] |= tmp16 << 0
+	// BoolArray[1]
+	tmp16 = 0; if m.BoolArray[1] {tmp16 = 1}
+	buf[90] |= tmp16 << 0
+	// BoolArray[2]
+	tmp16 = 0; if m.BoolArray[2] {tmp16 = 1}
+	buf[91] |= tmp16 << 0
+	// BoolArray[3]
+	tmp16 = 0; if m.BoolArray[3] {tmp16 = 1}
+	buf[92] |= tmp16 << 0
+	// BoolArray[4]
+	tmp16 = 0; if m.BoolArray[4] {tmp16 = 1}
+	buf[93] |= tmp16 << 0
 
 	return buf, nil
 }
@@ -165,12 +225,62 @@ func (m *BigEndianHighWord) Unmarshal(buf []uint16) error {
 	// Bit14
 	tmp16 = buf[53] & 0x4000
 	if tmp16 != 0 { m.Bit14 = true } else { m.Bit14 = false }
+	// Uint16Array[0]
+	m.Uint16Array[0] = buf[54]
+	// Uint16Array[1]
+	m.Uint16Array[1] = buf[55]
+	// Uint16Array[2]
+	m.Uint16Array[2] = buf[56]
+	// Uint16Array[3]
+	m.Uint16Array[3] = buf[57]
+	// Uint16Array[4]
+	m.Uint16Array[4] = buf[58]
+	// Uint32Array[0]
+	m.Uint32Array[0] = uint32(buf[60]) | uint32(buf[59]) << 16
+	// Uint32Array[1]
+	m.Uint32Array[1] = uint32(buf[64]) | uint32(buf[63]) << 16
+	// Uint32Array[2]
+	m.Uint32Array[2] = uint32(buf[68]) | uint32(buf[67]) << 16
+	// Uint32Array[3]
+	m.Uint32Array[3] = uint32(buf[72]) | uint32(buf[71]) << 16
+	// Uint32Array[4]
+	m.Uint32Array[4] = uint32(buf[76]) | uint32(buf[75]) << 16
+	// Float32Array[0]
+	tmp32 = uint32(buf[80]) | uint32(buf[79]) << 16
+	m.Float32Array[0] = math.Float32frombits(tmp32)
+	// Float32Array[1]
+	tmp32 = uint32(buf[82]) | uint32(buf[81]) << 16
+	m.Float32Array[1] = math.Float32frombits(tmp32)
+	// Float32Array[2]
+	tmp32 = uint32(buf[84]) | uint32(buf[83]) << 16
+	m.Float32Array[2] = math.Float32frombits(tmp32)
+	// Float32Array[3]
+	tmp32 = uint32(buf[86]) | uint32(buf[85]) << 16
+	m.Float32Array[3] = math.Float32frombits(tmp32)
+	// Float32Array[4]
+	tmp32 = uint32(buf[88]) | uint32(buf[87]) << 16
+	m.Float32Array[4] = math.Float32frombits(tmp32)
+	// BoolArray[0]
+	tmp16 = buf[89] & 0x0001
+	if tmp16 != 0 { m.BoolArray[0] = true } else { m.BoolArray[0] = false }
+	// BoolArray[1]
+	tmp16 = buf[90] & 0x0001
+	if tmp16 != 0 { m.BoolArray[1] = true } else { m.BoolArray[1] = false }
+	// BoolArray[2]
+	tmp16 = buf[91] & 0x0001
+	if tmp16 != 0 { m.BoolArray[2] = true } else { m.BoolArray[2] = false }
+	// BoolArray[3]
+	tmp16 = buf[92] & 0x0001
+	if tmp16 != 0 { m.BoolArray[3] = true } else { m.BoolArray[3] = false }
+	// BoolArray[4]
+	tmp16 = buf[93] & 0x0001
+	if tmp16 != 0 { m.BoolArray[4] = true } else { m.BoolArray[4] = false }
 
 	return nil
 }
 
 func (m BigEndianHighWordAllCustom) Marshal() ([]uint16, error) {
-	buf := make([]uint16, 54)
+	buf := make([]uint16, 94)
 	var i int
 	var tmp16 uint16
 	var tmp32 uint32
@@ -250,6 +360,66 @@ func (m BigEndianHighWordAllCustom) Marshal() ([]uint16, error) {
 	// Bit14
 	tmp16 = 0; if m.Bit14 {tmp16 = 1}
 	buf[53] |= tmp16 << 14
+	// Uint16Array[0]
+	buf[54] = uint16(m.Uint16Array[0])
+	// Uint16Array[1]
+	buf[55] = uint16(m.Uint16Array[1])
+	// Uint16Array[2]
+	buf[56] = uint16(m.Uint16Array[2])
+	// Uint16Array[3]
+	buf[57] = uint16(m.Uint16Array[3])
+	// Uint16Array[4]
+	buf[58] = uint16(m.Uint16Array[4])
+	// Uint32Array[0]
+	buf[60] = uint16(m.Uint32Array[0])
+	buf[59] = uint16(m.Uint32Array[0] >> 16)
+	// Uint32Array[1]
+	buf[64] = uint16(m.Uint32Array[1])
+	buf[63] = uint16(m.Uint32Array[1] >> 16)
+	// Uint32Array[2]
+	buf[68] = uint16(m.Uint32Array[2])
+	buf[67] = uint16(m.Uint32Array[2] >> 16)
+	// Uint32Array[3]
+	buf[72] = uint16(m.Uint32Array[3])
+	buf[71] = uint16(m.Uint32Array[3] >> 16)
+	// Uint32Array[4]
+	buf[76] = uint16(m.Uint32Array[4])
+	buf[75] = uint16(m.Uint32Array[4] >> 16)
+	// Float32Array[0]
+	tmp32 = math.Float32bits(float32(m.Float32Array[0]))
+	buf[80] = uint16(tmp32)
+	buf[79] = uint16(tmp32 >> 16)
+	// Float32Array[1]
+	tmp32 = math.Float32bits(float32(m.Float32Array[1]))
+	buf[82] = uint16(tmp32)
+	buf[81] = uint16(tmp32 >> 16)
+	// Float32Array[2]
+	tmp32 = math.Float32bits(float32(m.Float32Array[2]))
+	buf[84] = uint16(tmp32)
+	buf[83] = uint16(tmp32 >> 16)
+	// Float32Array[3]
+	tmp32 = math.Float32bits(float32(m.Float32Array[3]))
+	buf[86] = uint16(tmp32)
+	buf[85] = uint16(tmp32 >> 16)
+	// Float32Array[4]
+	tmp32 = math.Float32bits(float32(m.Float32Array[4]))
+	buf[88] = uint16(tmp32)
+	buf[87] = uint16(tmp32 >> 16)
+	// BoolArray[0]
+	tmp16 = 0; if m.BoolArray[0] {tmp16 = 1}
+	buf[89] |= tmp16 << 0
+	// BoolArray[1]
+	tmp16 = 0; if m.BoolArray[1] {tmp16 = 1}
+	buf[90] |= tmp16 << 0
+	// BoolArray[2]
+	tmp16 = 0; if m.BoolArray[2] {tmp16 = 1}
+	buf[91] |= tmp16 << 0
+	// BoolArray[3]
+	tmp16 = 0; if m.BoolArray[3] {tmp16 = 1}
+	buf[92] |= tmp16 << 0
+	// BoolArray[4]
+	tmp16 = 0; if m.BoolArray[4] {tmp16 = 1}
+	buf[93] |= tmp16 << 0
 
 	return buf, nil
 }
@@ -327,12 +497,62 @@ func (m *BigEndianHighWordAllCustom) Unmarshal(buf []uint16) error {
 	// Bit14
 	tmp16 = buf[53] & 0x4000
 	if tmp16 != 0 { m.Bit14 = true } else { m.Bit14 = false }
+	// Uint16Array[0]
+	m.Uint16Array[0] = CustomUint16(buf[54])
+	// Uint16Array[1]
+	m.Uint16Array[1] = CustomUint16(buf[55])
+	// Uint16Array[2]
+	m.Uint16Array[2] = CustomUint16(buf[56])
+	// Uint16Array[3]
+	m.Uint16Array[3] = CustomUint16(buf[57])
+	// Uint16Array[4]
+	m.Uint16Array[4] = CustomUint16(buf[58])
+	// Uint32Array[0]
+	m.Uint32Array[0] = CustomUint32(buf[60]) | CustomUint32(buf[59]) << 16
+	// Uint32Array[1]
+	m.Uint32Array[1] = CustomUint32(buf[64]) | CustomUint32(buf[63]) << 16
+	// Uint32Array[2]
+	m.Uint32Array[2] = CustomUint32(buf[68]) | CustomUint32(buf[67]) << 16
+	// Uint32Array[3]
+	m.Uint32Array[3] = CustomUint32(buf[72]) | CustomUint32(buf[71]) << 16
+	// Uint32Array[4]
+	m.Uint32Array[4] = CustomUint32(buf[76]) | CustomUint32(buf[75]) << 16
+	// Float32Array[0]
+	tmp32 = uint32(buf[80]) | uint32(buf[79]) << 16
+	m.Float32Array[0] = CustomFloat32(math.Float32frombits(tmp32))
+	// Float32Array[1]
+	tmp32 = uint32(buf[82]) | uint32(buf[81]) << 16
+	m.Float32Array[1] = CustomFloat32(math.Float32frombits(tmp32))
+	// Float32Array[2]
+	tmp32 = uint32(buf[84]) | uint32(buf[83]) << 16
+	m.Float32Array[2] = CustomFloat32(math.Float32frombits(tmp32))
+	// Float32Array[3]
+	tmp32 = uint32(buf[86]) | uint32(buf[85]) << 16
+	m.Float32Array[3] = CustomFloat32(math.Float32frombits(tmp32))
+	// Float32Array[4]
+	tmp32 = uint32(buf[88]) | uint32(buf[87]) << 16
+	m.Float32Array[4] = CustomFloat32(math.Float32frombits(tmp32))
+	// BoolArray[0]
+	tmp16 = buf[89] & 0x0001
+	if tmp16 != 0 { m.BoolArray[0] = true } else { m.BoolArray[0] = false }
+	// BoolArray[1]
+	tmp16 = buf[90] & 0x0001
+	if tmp16 != 0 { m.BoolArray[1] = true } else { m.BoolArray[1] = false }
+	// BoolArray[2]
+	tmp16 = buf[91] & 0x0001
+	if tmp16 != 0 { m.BoolArray[2] = true } else { m.BoolArray[2] = false }
+	// BoolArray[3]
+	tmp16 = buf[92] & 0x0001
+	if tmp16 != 0 { m.BoolArray[3] = true } else { m.BoolArray[3] = false }
+	// BoolArray[4]
+	tmp16 = buf[93] & 0x0001
+	if tmp16 != 0 { m.BoolArray[4] = true } else { m.BoolArray[4] = false }
 
 	return nil
 }
 
 func (m BigEndianHighWordAllCustomExtern) Marshal() ([]uint16, error) {
-	buf := make([]uint16, 54)
+	buf := make([]uint16, 94)
 	var i int
 	var tmp16 uint16
 	var tmp32 uint32
@@ -412,6 +632,66 @@ func (m BigEndianHighWordAllCustomExtern) Marshal() ([]uint16, error) {
 	// Bit14
 	tmp16 = 0; if m.Bit14 {tmp16 = 1}
 	buf[53] |= tmp16 << 14
+	// Uint16Array[0]
+	buf[54] = uint16(m.Uint16Array[0])
+	// Uint16Array[1]
+	buf[55] = uint16(m.Uint16Array[1])
+	// Uint16Array[2]
+	buf[56] = uint16(m.Uint16Array[2])
+	// Uint16Array[3]
+	buf[57] = uint16(m.Uint16Array[3])
+	// Uint16Array[4]
+	buf[58] = uint16(m.Uint16Array[4])
+	// Uint32Array[0]
+	buf[60] = uint16(m.Uint32Array[0])
+	buf[59] = uint16(m.Uint32Array[0] >> 16)
+	// Uint32Array[1]
+	buf[64] = uint16(m.Uint32Array[1])
+	buf[63] = uint16(m.Uint32Array[1] >> 16)
+	// Uint32Array[2]
+	buf[68] = uint16(m.Uint32Array[2])
+	buf[67] = uint16(m.Uint32Array[2] >> 16)
+	// Uint32Array[3]
+	buf[72] = uint16(m.Uint32Array[3])
+	buf[71] = uint16(m.Uint32Array[3] >> 16)
+	// Uint32Array[4]
+	buf[76] = uint16(m.Uint32Array[4])
+	buf[75] = uint16(m.Uint32Array[4] >> 16)
+	// Float32Array[0]
+	tmp32 = math.Float32bits(float32(m.Float32Array[0]))
+	buf[80] = uint16(tmp32)
+	buf[79] = uint16(tmp32 >> 16)
+	// Float32Array[1]
+	tmp32 = math.Float32bits(float32(m.Float32Array[1]))
+	buf[82] = uint16(tmp32)
+	buf[81] = uint16(tmp32 >> 16)
+	// Float32Array[2]
+	tmp32 = math.Float32bits(float32(m.Float32Array[2]))
+	buf[84] = uint16(tmp32)
+	buf[83] = uint16(tmp32 >> 16)
+	// Float32Array[3]
+	tmp32 = math.Float32bits(float32(m.Float32Array[3]))
+	buf[86] = uint16(tmp32)
+	buf[85] = uint16(tmp32 >> 16)
+	// Float32Array[4]
+	tmp32 = math.Float32bits(float32(m.Float32Array[4]))
+	buf[88] = uint16(tmp32)
+	buf[87] = uint16(tmp32 >> 16)
+	// BoolArray[0]
+	tmp16 = 0; if m.BoolArray[0] {tmp16 = 1}
+	buf[89] |= tmp16 << 0
+	// BoolArray[1]
+	tmp16 = 0; if m.BoolArray[1] {tmp16 = 1}
+	buf[90] |= tmp16 << 0
+	// BoolArray[2]
+	tmp16 = 0; if m.BoolArray[2] {tmp16 = 1}
+	buf[91] |= tmp16 << 0
+	// BoolArray[3]
+	tmp16 = 0; if m.BoolArray[3] {tmp16 = 1}
+	buf[92] |= tmp16 << 0
+	// BoolArray[4]
+	tmp16 = 0; if m.BoolArray[4] {tmp16 = 1}
+	buf[93] |= tmp16 << 0
 
 	return buf, nil
 }
@@ -489,6 +769,56 @@ func (m *BigEndianHighWordAllCustomExtern) Unmarshal(buf []uint16) error {
 	// Bit14
 	tmp16 = buf[53] & 0x4000
 	if tmp16 != 0 { m.Bit14 = true } else { m.Bit14 = false }
+	// Uint16Array[0]
+	m.Uint16Array[0] = extern.CustomUint16(buf[54])
+	// Uint16Array[1]
+	m.Uint16Array[1] = extern.CustomUint16(buf[55])
+	// Uint16Array[2]
+	m.Uint16Array[2] = extern.CustomUint16(buf[56])
+	// Uint16Array[3]
+	m.Uint16Array[3] = extern.CustomUint16(buf[57])
+	// Uint16Array[4]
+	m.Uint16Array[4] = extern.CustomUint16(buf[58])
+	// Uint32Array[0]
+	m.Uint32Array[0] = extern.CustomUint32(buf[60]) | extern.CustomUint32(buf[59]) << 16
+	// Uint32Array[1]
+	m.Uint32Array[1] = extern.CustomUint32(buf[64]) | extern.CustomUint32(buf[63]) << 16
+	// Uint32Array[2]
+	m.Uint32Array[2] = extern.CustomUint32(buf[68]) | extern.CustomUint32(buf[67]) << 16
+	// Uint32Array[3]
+	m.Uint32Array[3] = extern.CustomUint32(buf[72]) | extern.CustomUint32(buf[71]) << 16
+	// Uint32Array[4]
+	m.Uint32Array[4] = extern.CustomUint32(buf[76]) | extern.CustomUint32(buf[75]) << 16
+	// Float32Array[0]
+	tmp32 = uint32(buf[80]) | uint32(buf[79]) << 16
+	m.Float32Array[0] = extern.CustomFloat32(math.Float32frombits(tmp32))
+	// Float32Array[1]
+	tmp32 = uint32(buf[82]) | uint32(buf[81]) << 16
+	m.Float32Array[1] = extern.CustomFloat32(math.Float32frombits(tmp32))
+	// Float32Array[2]
+	tmp32 = uint32(buf[84]) | uint32(buf[83]) << 16
+	m.Float32Array[2] = extern.CustomFloat32(math.Float32frombits(tmp32))
+	// Float32Array[3]
+	tmp32 = uint32(buf[86]) | uint32(buf[85]) << 16
+	m.Float32Array[3] = extern.CustomFloat32(math.Float32frombits(tmp32))
+	// Float32Array[4]
+	tmp32 = uint32(buf[88]) | uint32(buf[87]) << 16
+	m.Float32Array[4] = extern.CustomFloat32(math.Float32frombits(tmp32))
+	// BoolArray[0]
+	tmp16 = buf[89] & 0x0001
+	if tmp16 != 0 { m.BoolArray[0] = true } else { m.BoolArray[0] = false }
+	// BoolArray[1]
+	tmp16 = buf[90] & 0x0001
+	if tmp16 != 0 { m.BoolArray[1] = true } else { m.BoolArray[1] = false }
+	// BoolArray[2]
+	tmp16 = buf[91] & 0x0001
+	if tmp16 != 0 { m.BoolArray[2] = true } else { m.BoolArray[2] = false }
+	// BoolArray[3]
+	tmp16 = buf[92] & 0x0001
+	if tmp16 != 0 { m.BoolArray[3] = true } else { m.BoolArray[3] = false }
+	// BoolArray[4]
+	tmp16 = buf[93] & 0x0001
+	if tmp16 != 0 { m.BoolArray[4] = true } else { m.BoolArray[4] = false }
 
 	return nil
 }

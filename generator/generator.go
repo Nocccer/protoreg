@@ -258,10 +258,11 @@ func (g *ProtoRegGen) genFromStruct(
 		if err != nil {
 			return StructResult{}, err
 		}
-		gens = append(gens, res.Gen)
-
-		if res.Len > length {
-			length = res.Len
+		for _, r := range res {
+			gens = append(gens, r.Gen)
+			if r.Len > length {
+				length = r.Len
+			}
 		}
 	}
 
@@ -354,10 +355,12 @@ func (g *ProtoRegGen) extractField(
 	typ ast.Expr,
 	tagStr string,
 	typesInfo *types.Info,
-) (NewGenResult, error) {
+) ([]NewGenResult, error) {
+	var results []NewGenResult
+
 	t, ok := typesInfo.Types[typ]
 	if !ok {
-		return NewGenResult{}, fmt.Errorf("unknown type: %v", typ)
+		return results, fmt.Errorf("unknown type: %v", typ)
 	}
 
 	g.log.Debug(
@@ -369,21 +372,83 @@ func (g *ProtoRegGen) extractField(
 
 	tag, err := extractTags(tagStr)
 	if err != nil {
-		return NewGenResult{}, fmt.Errorf("failed to extract tags for %s: %v", name, err)
+		return results, fmt.Errorf("failed to extract tags for %s: %v", name, err)
+	}
+
+	array, isArray := t.Type.Underlying().(*types.Array)
+	if isArray {
+		t.Type = array.Elem()
 	}
 
 	underlyingStr := t.Type.Underlying().String()
 	switch {
 	case strings.Contains(underlyingStr, "int") || strings.Contains(underlyingStr, "byte"):
-		return g.newIntegerGen(name, t.Type, tag)
+		if !isArray {
+			gen, err := g.newIntegerGen(name, t.Type, tag)
+			if err != nil {
+				return results, err
+			}
+			results = append(results, gen)
+			return results, nil
+		}
+		for i := range array.Len() {
+			gen, err := g.newIntegerGen(fmt.Sprintf("%s[%d]", name, i), t.Type, tag.DeepCopy())
+			if err != nil {
+				return results, err
+			}
+			results = append(results, gen)
+			fmt.Println(gen.Len)
+			*tag.Offset = gen.Len
+		}
+		return results, nil
 	case strings.Contains(underlyingStr, "float"):
-		return g.newFloatGen(name, t.Type, tag)
+		if !isArray {
+			gen, err := g.newFloatGen(name, t.Type, tag)
+			if err != nil {
+				return results, err
+			}
+			results = append(results, gen)
+			return results, nil
+		}
+		for i := range array.Len() {
+			gen, err := g.newFloatGen(fmt.Sprintf("%s[%d]", name, i), t.Type, tag.DeepCopy())
+			if err != nil {
+				return results, err
+			}
+			results = append(results, gen)
+			*tag.Offset = gen.Len
+		}
+		return results, nil
 	case underlyingStr == "string":
-		return g.newStringGen(name, t.Type, tag)
+		if isArray {
+			return results, fmt.Errorf("string arrays are not supported: %s", name)
+		}
+		gen, err := g.newStringGen(name, t.Type, tag)
+		if err != nil {
+			return results, err
+		}
+		results = append(results, gen)
+		return results, nil
 	case underlyingStr == "bool":
-		return g.newBoolGen(name, t.Type, tag)
+		if !isArray {
+			gen, err := g.newBoolGen(name, t.Type, tag)
+			if err != nil {
+				return results, err
+			}
+			results = append(results, gen)
+			return results, nil
+		}
+		for i := range array.Len() {
+			gen, err := g.newBoolGen(fmt.Sprintf("%s[%d]", name, i), t.Type, tag.DeepCopy())
+			if err != nil {
+				return results, err
+			}
+			results = append(results, gen)
+			*tag.Offset = gen.Len
+		}
+		return results, nil
 	default:
-		return NewGenResult{}, fmt.Errorf(
+		return results, fmt.Errorf(
 			"unsupported underlying field type: %s",
 			t.Type.Underlying().String(),
 		)
