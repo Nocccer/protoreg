@@ -149,6 +149,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"runtime/debug"
 	"strings"
 
 	"github.com/lmittmann/tint"
@@ -167,7 +168,37 @@ func main() {
 	outputFlag := flag.String("o", "", "Output file name. Default is <file>_protoreg.go.")
 	verbose := flag.Bool("v", false, "Enable verbose logging.")
 	keyFlag := flag.String("key", "protoreg", "Struct tag key to use.")
+	version := flag.Bool("version", false, "Print version information and exit.")
 	flag.Parse()
+
+	if *version {
+		// Build-Informationen auslesen
+		info, ok := debug.ReadBuildInfo()
+		if !ok {
+			fmt.Println(
+				"No build information available. Please ensure the binary was built with module support.",
+			)
+			os.Exit(1)
+		}
+
+		// Main
+		fmt.Printf("Main.Version: %s\n", info.Main.Version)
+		fmt.Printf("Main.Path: %s\n", info.Main.Path)
+		fmt.Printf("GoVersion: %s\n", info.GoVersion)
+
+		// Settings
+		fmt.Println("\nSettings:")
+		for _, setting := range info.Settings {
+			fmt.Printf(" - %s: %s\n", setting.Key, setting.Value)
+		}
+
+		// Dependencies
+		fmt.Println("\nDependencies:")
+		for _, dep := range info.Deps {
+			fmt.Printf(" - %s@%s\n", dep.Path, dep.Version)
+		}
+		os.Exit(0)
+	}
 
 	level := slog.LevelInfo
 	if *verbose {
