@@ -187,6 +187,7 @@ func (s *BigEndianHighWordAllCustomTestSuite) SetupTest() {
 		},
 		Float32Array: [5]tests.CustomFloat32{1.1, 2.2, 3.3, 4.4, 5.5},
 		BoolArray:    [5]tests.CustomBool{true, false, true, false, true},
+		BitField16:   0x1234,
 	}
 }
 
@@ -242,6 +243,7 @@ func BenchmarkBigEndianHighWordAllCustomMarshal(b *testing.B) {
 		},
 		Float32Array: [5]tests.CustomFloat32{1.1, 2.2, 3.3, 4.4, 5.5},
 		BoolArray:    [5]tests.CustomBool{true, false, true, false, true},
+		BitField16:   0x1234,
 	}
 
 	for b.Loop() {
@@ -286,6 +288,7 @@ func BenchmarkBigEndianHighWordAllCustomUnmarshal(b *testing.B) {
 		},
 		Float32Array: [5]tests.CustomFloat32{1.1, 2.2, 3.3, 4.4, 5.5},
 		BoolArray:    [5]tests.CustomBool{true, false, true, false, true},
+		BitField16:   0x1234,
 	}
 
 	reg, err := test.Marshal()
@@ -344,6 +347,7 @@ func (s *BigEndianHighWordAllCustomExternTestSuite) SetupTest() {
 		},
 		Float32Array: [5]extern.CustomFloat32{1.1, 2.2, 3.3, 4.4, 5.5},
 		BoolArray:    [5]extern.CustomBool{true, false, true, false, true},
+		BitField16:   0x1234,
 	}
 }
 
@@ -397,6 +401,7 @@ func BenchmarkBigEndianHighWordAllCustomExternMarshal(b *testing.B) {
 		},
 		Float32Array: [5]extern.CustomFloat32{1.1, 2.2, 3.3, 4.4, 5.5},
 		BoolArray:    [5]extern.CustomBool{true, false, true, false, true},
+		BitField16:   0x1234,
 	}
 
 	for b.Loop() {
@@ -441,6 +446,7 @@ func BenchmarkBigEndianHighWordAllCustomExternUnmarshal(b *testing.B) {
 		},
 		Float32Array: [5]extern.CustomFloat32{1.1, 2.2, 3.3, 4.4, 5.5},
 		BoolArray:    [5]extern.CustomBool{true, false, true, false, true},
+		BitField16:   0x1234,
 	}
 
 	reg, err := test.Marshal()

@@ -29,26 +29,38 @@ func (g *ProtoRegGen) extractCustomType(typePath string) string {
 		"extract custom type",
 	)
 
+	// catch generic
+	var gtyp string
+	var genericType string
+	if strings.Contains(typePath, "[") {
+		typePath, genericType, _ = strings.Cut(typePath, "[")
+		gtyp = g.extractCustomType(genericType[:len(genericType)-1]) // remove closing bracket
+	}
+
 	parts := strings.Split(typePath, "/")
 	typ := parts[len(parts)-1]
-	selAndType := strings.Split(typ, ".")
-	if selAndType[0] == g.pkg {
+	pkgAndType := strings.Split(typ, ".")
+	if pkgAndType[0] == g.pkg {
 		g.log.Debug(
 			"type is in the same package",
 			slog.String("pkg", g.pkg),
-			slog.String("type", typePath),
+			slog.String("pkg-type", typePath),
 		)
-		return selAndType[1]
+		typ = pkgAndType[1]
+	} else {
+		imp := strings.TrimSuffix(typePath, fmt.Sprintf(".%s", pkgAndType[1]))
+
+		g.log.Debug(
+			"type is in a different package",
+			slog.String("import", imp),
+		)
+
+		g.imports = append(g.imports, imp)
 	}
 
-	imp := strings.TrimSuffix(typePath, fmt.Sprintf(".%s", selAndType[1]))
-
-	g.log.Debug(
-		"type is in a different package",
-		slog.String("import", imp),
-	)
-
-	g.imports = append(g.imports, imp)
+	if gtyp != "" {
+		return fmt.Sprintf("%s[%s]", typ, gtyp)
+	}
 
 	return typ
 }

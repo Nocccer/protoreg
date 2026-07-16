@@ -1,5 +1,7 @@
 package extern
 
+import "strconv"
+
 type (
 	CustomUint8   uint8
 	CustomInt8    int8
@@ -15,3 +17,14 @@ type (
 	CustomString  string
 	CustomBool    bool
 )
+
+func (c CustomUint16) String() string {
+	return strconv.Itoa(int(c))
+}
+
+type BitField16[T UInt16Stringer] uint16
+
+type UInt16Stringer interface {
+	~uint16
+	String() string
+}

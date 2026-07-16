@@ -397,7 +397,6 @@ func (g *ProtoRegGen) extractField(
 				return results, err
 			}
 			results = append(results, gen)
-			fmt.Println(gen.Len)
 			*tag.Offset = gen.Len
 		}
 		return results, nil

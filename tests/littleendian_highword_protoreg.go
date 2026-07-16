@@ -281,7 +281,7 @@ func (m *LittleEndianHighWord) Unmarshal(buf []uint16) error {
 }
 
 func (m LittleEndianHighWordAllCustom) Marshal() ([]uint16, error) {
-	buf := make([]uint16, 94)
+	buf := make([]uint16, 95)
 	var i int
 	var tmp16 uint16
 	var tmp32 uint32
@@ -421,6 +421,8 @@ func (m LittleEndianHighWordAllCustom) Marshal() ([]uint16, error) {
 	// BoolArray[4]
 	tmp16 = 0; if m.BoolArray[4] {tmp16 = 1}
 	buf[93] |= bits.ReverseBytes16(tmp16 << 0)
+	// BitField16
+	buf[94] = bits.ReverseBytes16(uint16(m.BitField16))
 
 	return buf, nil
 }
@@ -548,12 +550,14 @@ func (m *LittleEndianHighWordAllCustom) Unmarshal(buf []uint16) error {
 	// BoolArray[4]
 	tmp16 = bits.ReverseBytes16(buf[93]) & 0x0001
 	if tmp16 != 0 { m.BoolArray[4] = true } else { m.BoolArray[4] = false }
+	// BitField16
+	m.BitField16 = BitField16[CustomUint16](bits.ReverseBytes16(buf[94]))
 
 	return nil
 }
 
 func (m LittleEndianHighWordAllCustomExtern) Marshal() ([]uint16, error) {
-	buf := make([]uint16, 94)
+	buf := make([]uint16, 95)
 	var i int
 	var tmp16 uint16
 	var tmp32 uint32
@@ -693,6 +697,8 @@ func (m LittleEndianHighWordAllCustomExtern) Marshal() ([]uint16, error) {
 	// BoolArray[4]
 	tmp16 = 0; if m.BoolArray[4] {tmp16 = 1}
 	buf[93] |= bits.ReverseBytes16(tmp16 << 0)
+	// BitField16
+	buf[94] = bits.ReverseBytes16(uint16(m.BitField16))
 
 	return buf, nil
 }
@@ -820,6 +826,8 @@ func (m *LittleEndianHighWordAllCustomExtern) Unmarshal(buf []uint16) error {
 	// BoolArray[4]
 	tmp16 = bits.ReverseBytes16(buf[93]) & 0x0001
 	if tmp16 != 0 { m.BoolArray[4] = true } else { m.BoolArray[4] = false }
+	// BitField16
+	m.BitField16 = extern.BitField16[extern.CustomUint16](bits.ReverseBytes16(buf[94]))
 
 	return nil
 }
