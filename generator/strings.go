@@ -43,7 +43,7 @@ func (g *ProtoRegGen) newStringGen(name string, typ types.Type, tags Tags) (NewG
 
 	if *field.Tags.Char == Char32 && *field.Tags.Size%2 != 0 {
 		return NewGenResult{}, fmt.Errorf(
-			`"size" for %s with "char=32" must be divisible by 2.`,
+			`"size" for %s with "char=32" must be divisible by 2`,
 			name,
 		)
 	}
@@ -269,42 +269,22 @@ func (f FieldString) Unmarshaler() string {
 
 		fmt.Fprintf(&sb, "\tfor i := 0; i < %d; i++ {\n", charsPerField)
 
-		if *f.Tags.WordOrder == LowWordFirst {
-			if *f.Tags.Encoding == LittleEndian {
-				fmt.Fprintf(
-					&sb,
-					"\t\tfirst := uint16(buf[%d+i*2] >> 8) | uint16(buf[%d+i*2] << 8)\n",
-					*f.Tags.Offset,
-					*f.Tags.Offset,
-				)
-				fmt.Fprintf(
-					&sb,
-					"\t\tsecond := uint16(buf[%d+i*2+1] >> 8) | uint16(buf[%d+i*2+1] << 8)\n",
-					*f.Tags.Offset,
-					*f.Tags.Offset,
-				)
-			} else {
-				fmt.Fprintf(&sb, "\t\tfirst := buf[%d+i*2]\n", *f.Tags.Offset)
-				fmt.Fprintf(&sb, "\t\tsecond := buf[%d+i*2+1]\n", *f.Tags.Offset)
-			}
+		if *f.Tags.Encoding == LittleEndian {
+			fmt.Fprintf(
+				&sb,
+				"\t\tfirst := uint16(buf[%d+i*2] >> 8) | uint16(buf[%d+i*2] << 8)\n",
+				*f.Tags.Offset,
+				*f.Tags.Offset,
+			)
+			fmt.Fprintf(
+				&sb,
+				"\t\tsecond := uint16(buf[%d+i*2+1] >> 8) | uint16(buf[%d+i*2+1] << 8)\n",
+				*f.Tags.Offset,
+				*f.Tags.Offset,
+			)
 		} else {
-			if *f.Tags.Encoding == LittleEndian {
-				fmt.Fprintf(
-					&sb,
-					"\t\tfirst := uint16(buf[%d+i*2] >> 8) | uint16(buf[%d+i*2] << 8)\n",
-					*f.Tags.Offset,
-					*f.Tags.Offset,
-				)
-				fmt.Fprintf(
-					&sb,
-					"\t\tsecond := uint16(buf[%d+i*2+1] >> 8) | uint16(buf[%d+i*2+1] << 8)\n",
-					*f.Tags.Offset,
-					*f.Tags.Offset,
-				)
-			} else {
-				fmt.Fprintf(&sb, "\t\tfirst := buf[%d+i*2]\n", *f.Tags.Offset)
-				fmt.Fprintf(&sb, "\t\tsecond := buf[%d+i*2+1]\n", *f.Tags.Offset)
-			}
+			fmt.Fprintf(&sb, "\t\tfirst := buf[%d+i*2]\n", *f.Tags.Offset)
+			fmt.Fprintf(&sb, "\t\tsecond := buf[%d+i*2+1]\n", *f.Tags.Offset)
 		}
 
 		if *f.Tags.WordOrder == LowWordFirst {
