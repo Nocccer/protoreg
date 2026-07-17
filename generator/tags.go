@@ -26,11 +26,12 @@ type Char string
 const (
 	Char8  Char = "8"
 	Char16 Char = "16"
+	Char32 Char = "32"
 )
 
 func (c Char) Validate() error {
 	switch c {
-	case Char8, Char16:
+	case Char8, Char16, Char32:
 		return nil
 	}
 	return fmt.Errorf(`invalid "char" value %q`, c)
