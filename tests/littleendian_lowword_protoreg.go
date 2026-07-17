@@ -9,7 +9,7 @@ import (
 )
 
 func (m LittleEndianLowWord) Marshal() ([]uint16, error) {
-	buf := make([]uint16, 94)
+	buf := make([]uint16, 104)
 	var i int
 	var tmp16 uint16
 	var tmp32 uint32
@@ -63,7 +63,7 @@ func (m LittleEndianLowWord) Marshal() ([]uint16, error) {
 		b1 := m.StringASCII8[i]
 		var b2 byte
 		if i+1 < length {b2 = m.StringASCII8[i+1]}
-		buf[25+i/2] = uint16(b1) <<8 | uint16(b2)
+		buf[25+i/2] = uint16(b1) | uint16(b2) << 8
 	}
 	// StringASCII16
 	for i := 0; i < len(m.StringASCII16); i++ {
@@ -149,6 +149,22 @@ func (m LittleEndianLowWord) Marshal() ([]uint16, error) {
 	// BoolArray[4]
 	tmp16 = 0; if m.BoolArray[4] {tmp16 = 1}
 	buf[93] |= bits.ReverseBytes16(tmp16 << 0)
+	// StringASCII32
+	for i := 0; i < len(m.StringASCII32); i++ {
+		if i >= 2 {break}
+		tmp32 = uint32(m.StringASCII32[i])
+		buf[96+i*2] = uint16(tmp32)>>8 | uint16(tmp32)<<8
+		buf[96+i*2+1] = uint16(tmp32>>16)>>8 | uint16(tmp32>>16)<<8
+	}
+	// StringUTF832
+	i = 0
+	for _, r := range m.StringUTF832 {
+		if i >= 2 {break}
+		tmp32 = uint32(r)
+		buf[100+i*2] = uint16(tmp32)>>8 | uint16(tmp32)<<8
+		buf[100+i*2+1] = uint16(tmp32>>16)>>8 | uint16(tmp32>>16)<<8
+		i++
+	}
 
 	return buf, nil
 }
@@ -192,12 +208,12 @@ func (m *LittleEndianLowWord) Unmarshal(buf []uint16) error {
 	// StringASCII8
 	bytes = make([]byte, 18)
 	for i, v := range buf[25:34] {
-		low := byte(v >> 8)
-		if low == 0 {bytes = bytes[:i*2];break} // stop on empty char
-		bytes[i*2] = low
-		high := byte(v)
-		if high == 0 {bytes = bytes[:i*2+1];break} // stop on empty char
-		bytes[i*2+1] = high
+		first := byte(v)
+		if first == 0 {bytes = bytes[:i*2];break} // stop on empty char
+		bytes[i*2] = first
+		second := byte(v >> 8)
+		if second == 0 {bytes = bytes[:i*2+1];break} // stop on empty char
+		bytes[i*2+1] = second
 	}
 	m.StringASCII8 = string(bytes)
 	// StringASCII16
@@ -276,12 +292,32 @@ func (m *LittleEndianLowWord) Unmarshal(buf []uint16) error {
 	// BoolArray[4]
 	tmp16 = bits.ReverseBytes16(buf[93]) & 0x0001
 	if tmp16 != 0 { m.BoolArray[4] = true } else { m.BoolArray[4] = false }
+	// StringASCII32
+	bytes = make([]byte, 0, 2)
+	for i := 0; i < 2; i++ {
+		first := uint16(buf[96+i*2] >> 8) | uint16(buf[96+i*2] << 8)
+		second := uint16(buf[96+i*2+1] >> 8) | uint16(buf[96+i*2+1] << 8)
+		tmp32 = uint32(first) | uint32(second) << 16
+		if tmp32 == 0 {break} // stop on empty char
+		bytes = append(bytes, byte(tmp32))
+	}
+	m.StringASCII32 = string(bytes)
+	// StringUTF832
+	runes = make([]rune, 0, 2)
+	for i := 0; i < 2; i++ {
+		first := uint16(buf[100+i*2] >> 8) | uint16(buf[100+i*2] << 8)
+		second := uint16(buf[100+i*2+1] >> 8) | uint16(buf[100+i*2+1] << 8)
+		tmp32 = uint32(first) | uint32(second) << 16
+		if tmp32 == 0 {break} // stop on empty char
+		runes = append(runes, rune(tmp32))
+	}
+	m.StringUTF832 = string(runes)
 
 	return nil
 }
 
 func (m LittleEndianLowWordAllCustom) Marshal() ([]uint16, error) {
-	buf := make([]uint16, 95)
+	buf := make([]uint16, 104)
 	var i int
 	var tmp16 uint16
 	var tmp32 uint32
@@ -335,7 +371,7 @@ func (m LittleEndianLowWordAllCustom) Marshal() ([]uint16, error) {
 		b1 := m.StringASCII8[i]
 		var b2 byte
 		if i+1 < length {b2 = m.StringASCII8[i+1]}
-		buf[25+i/2] = uint16(b1) <<8 | uint16(b2)
+		buf[25+i/2] = uint16(b1) | uint16(b2) << 8
 	}
 	// StringASCII16
 	for i := 0; i < len(m.StringASCII16); i++ {
@@ -423,6 +459,22 @@ func (m LittleEndianLowWordAllCustom) Marshal() ([]uint16, error) {
 	buf[93] |= bits.ReverseBytes16(tmp16 << 0)
 	// BitField16
 	buf[94] = bits.ReverseBytes16(uint16(m.BitField16))
+	// StringASCII32
+	for i := 0; i < len(m.StringASCII32); i++ {
+		if i >= 2 {break}
+		tmp32 = uint32(m.StringASCII32[i])
+		buf[96+i*2] = uint16(tmp32)>>8 | uint16(tmp32)<<8
+		buf[96+i*2+1] = uint16(tmp32>>16)>>8 | uint16(tmp32>>16)<<8
+	}
+	// StringUTF832
+	i = 0
+	for _, r := range m.StringUTF832 {
+		if i >= 2 {break}
+		tmp32 = uint32(r)
+		buf[100+i*2] = uint16(tmp32)>>8 | uint16(tmp32)<<8
+		buf[100+i*2+1] = uint16(tmp32>>16)>>8 | uint16(tmp32>>16)<<8
+		i++
+	}
 
 	return buf, nil
 }
@@ -466,12 +518,12 @@ func (m *LittleEndianLowWordAllCustom) Unmarshal(buf []uint16) error {
 	// StringASCII8
 	bytes = make([]byte, 18)
 	for i, v := range buf[25:34] {
-		low := byte(v >> 8)
-		if low == 0 {bytes = bytes[:i*2];break} // stop on empty char
-		bytes[i*2] = low
-		high := byte(v)
-		if high == 0 {bytes = bytes[:i*2+1];break} // stop on empty char
-		bytes[i*2+1] = high
+		first := byte(v)
+		if first == 0 {bytes = bytes[:i*2];break} // stop on empty char
+		bytes[i*2] = first
+		second := byte(v >> 8)
+		if second == 0 {bytes = bytes[:i*2+1];break} // stop on empty char
+		bytes[i*2+1] = second
 	}
 	m.StringASCII8 = CustomString(bytes)
 	// StringASCII16
@@ -552,12 +604,32 @@ func (m *LittleEndianLowWordAllCustom) Unmarshal(buf []uint16) error {
 	if tmp16 != 0 { m.BoolArray[4] = true } else { m.BoolArray[4] = false }
 	// BitField16
 	m.BitField16 = BitField16[CustomUint16](bits.ReverseBytes16(buf[94]))
+	// StringASCII32
+	bytes = make([]byte, 0, 2)
+	for i := 0; i < 2; i++ {
+		first := uint16(buf[96+i*2] >> 8) | uint16(buf[96+i*2] << 8)
+		second := uint16(buf[96+i*2+1] >> 8) | uint16(buf[96+i*2+1] << 8)
+		tmp32 = uint32(first) | uint32(second) << 16
+		if tmp32 == 0 {break} // stop on empty char
+		bytes = append(bytes, byte(tmp32))
+	}
+	m.StringASCII32 = CustomString(bytes)
+	// StringUTF832
+	runes = make([]rune, 0, 2)
+	for i := 0; i < 2; i++ {
+		first := uint16(buf[100+i*2] >> 8) | uint16(buf[100+i*2] << 8)
+		second := uint16(buf[100+i*2+1] >> 8) | uint16(buf[100+i*2+1] << 8)
+		tmp32 = uint32(first) | uint32(second) << 16
+		if tmp32 == 0 {break} // stop on empty char
+		runes = append(runes, rune(tmp32))
+	}
+	m.StringUTF832 = CustomString(runes)
 
 	return nil
 }
 
 func (m LittleEndianLowWordAllCustomExtern) Marshal() ([]uint16, error) {
-	buf := make([]uint16, 95)
+	buf := make([]uint16, 104)
 	var i int
 	var tmp16 uint16
 	var tmp32 uint32
@@ -611,7 +683,7 @@ func (m LittleEndianLowWordAllCustomExtern) Marshal() ([]uint16, error) {
 		b1 := m.StringASCII8[i]
 		var b2 byte
 		if i+1 < length {b2 = m.StringASCII8[i+1]}
-		buf[25+i/2] = uint16(b1) <<8 | uint16(b2)
+		buf[25+i/2] = uint16(b1) | uint16(b2) << 8
 	}
 	// StringASCII16
 	for i := 0; i < len(m.StringASCII16); i++ {
@@ -699,6 +771,22 @@ func (m LittleEndianLowWordAllCustomExtern) Marshal() ([]uint16, error) {
 	buf[93] |= bits.ReverseBytes16(tmp16 << 0)
 	// BitField16
 	buf[94] = bits.ReverseBytes16(uint16(m.BitField16))
+	// StringASCII32
+	for i := 0; i < len(m.StringASCII32); i++ {
+		if i >= 2 {break}
+		tmp32 = uint32(m.StringASCII32[i])
+		buf[96+i*2] = uint16(tmp32)>>8 | uint16(tmp32)<<8
+		buf[96+i*2+1] = uint16(tmp32>>16)>>8 | uint16(tmp32>>16)<<8
+	}
+	// StringUTF832
+	i = 0
+	for _, r := range m.StringUTF832 {
+		if i >= 2 {break}
+		tmp32 = uint32(r)
+		buf[100+i*2] = uint16(tmp32)>>8 | uint16(tmp32)<<8
+		buf[100+i*2+1] = uint16(tmp32>>16)>>8 | uint16(tmp32>>16)<<8
+		i++
+	}
 
 	return buf, nil
 }
@@ -742,12 +830,12 @@ func (m *LittleEndianLowWordAllCustomExtern) Unmarshal(buf []uint16) error {
 	// StringASCII8
 	bytes = make([]byte, 18)
 	for i, v := range buf[25:34] {
-		low := byte(v >> 8)
-		if low == 0 {bytes = bytes[:i*2];break} // stop on empty char
-		bytes[i*2] = low
-		high := byte(v)
-		if high == 0 {bytes = bytes[:i*2+1];break} // stop on empty char
-		bytes[i*2+1] = high
+		first := byte(v)
+		if first == 0 {bytes = bytes[:i*2];break} // stop on empty char
+		bytes[i*2] = first
+		second := byte(v >> 8)
+		if second == 0 {bytes = bytes[:i*2+1];break} // stop on empty char
+		bytes[i*2+1] = second
 	}
 	m.StringASCII8 = extern.CustomString(bytes)
 	// StringASCII16
@@ -828,6 +916,26 @@ func (m *LittleEndianLowWordAllCustomExtern) Unmarshal(buf []uint16) error {
 	if tmp16 != 0 { m.BoolArray[4] = true } else { m.BoolArray[4] = false }
 	// BitField16
 	m.BitField16 = BitField16[CustomUint16](bits.ReverseBytes16(buf[94]))
+	// StringASCII32
+	bytes = make([]byte, 0, 2)
+	for i := 0; i < 2; i++ {
+		first := uint16(buf[96+i*2] >> 8) | uint16(buf[96+i*2] << 8)
+		second := uint16(buf[96+i*2+1] >> 8) | uint16(buf[96+i*2+1] << 8)
+		tmp32 = uint32(first) | uint32(second) << 16
+		if tmp32 == 0 {break} // stop on empty char
+		bytes = append(bytes, byte(tmp32))
+	}
+	m.StringASCII32 = extern.CustomString(bytes)
+	// StringUTF832
+	runes = make([]rune, 0, 2)
+	for i := 0; i < 2; i++ {
+		first := uint16(buf[100+i*2] >> 8) | uint16(buf[100+i*2] << 8)
+		second := uint16(buf[100+i*2+1] >> 8) | uint16(buf[100+i*2+1] << 8)
+		tmp32 = uint32(first) | uint32(second) << 16
+		if tmp32 == 0 {break} // stop on empty char
+		runes = append(runes, rune(tmp32))
+	}
+	m.StringUTF832 = extern.CustomString(runes)
 
 	return nil
 }

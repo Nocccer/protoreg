@@ -39,6 +39,8 @@ func (s *BigEndianLowWordTestSuite) SetupTest() {
 		StringASCII8:  "TestData1",
 		StringASCII16: "TestData2",
 		StringUTF816:  "TestDäta3", // add utf8 char
+		StringASCII32:  "Te",
+		StringUTF832:   "T😀",
 		Bool:          true,
 		Bit1:          false,
 		Bit3:          false,
@@ -85,6 +87,8 @@ func BenchmarkBigEndianLowWordMarshal(b *testing.B) {
 		StringASCII8:  "TestData1",
 		StringASCII16: "TestData2",
 		StringUTF816:  "TestDäta3", // add utf8 char
+		StringASCII32:  "Te",
+		StringUTF832:   "T😀",
 		Bool:          true,
 		Bit1:          false,
 		Bit3:          false,
@@ -123,6 +127,8 @@ func BenchmarkBigEndianLowWordUnmarshal(b *testing.B) {
 		StringASCII8:  "TestData1",
 		StringASCII16: "TestData2",
 		StringUTF816:  "TestDäta3", // add utf8 char
+		StringASCII32:  "Te",
+		StringUTF832:   "T😀",
 		Bool:          true,
 		Bit1:          false,
 		Bit3:          false,
@@ -175,6 +181,8 @@ func (s *BigEndianLowWordAllCustomTestSuite) SetupTest() {
 		StringASCII8:  "TestData1",
 		StringASCII16: "TestData2",
 		StringUTF816:  "TestDäta3", // add utf8 char
+		StringASCII32:  "Te",
+		StringUTF832:   "T😀",
 		Bool:          true,
 		Bit1:          false,
 		Bit3:          false,
@@ -229,6 +237,8 @@ func BenchmarkBigEndianLowWordAllCustomMarshal(b *testing.B) {
 		StringASCII8:  "TestData1",
 		StringASCII16: "TestData2",
 		StringUTF816:  "TestDäta3", // add utf8 char
+		StringASCII32:  "Te",
+		StringUTF832:   "T😀",
 		Bool:          true,
 		Bit1:          false,
 		Bit3:          false,
@@ -274,6 +284,8 @@ func BenchmarkBigEndianLowWordAllCustomUnmarshal(b *testing.B) {
 		StringASCII8:  "TestData1",
 		StringASCII16: "TestData2",
 		StringUTF816:  "TestDäta3", // add utf8 char
+		StringASCII32:  "Te",
+		StringUTF832:   "T😀",
 		Bool:          true,
 		Bit1:          false,
 		Bit3:          false,
@@ -333,6 +345,8 @@ func (s *BigEndianLowWordAllCustomExternTestSuite) SetupTest() {
 		StringASCII8:  "TestData1",
 		StringASCII16: "TestData2",
 		StringUTF816:  "TestDäta3", // add utf8 char
+		StringASCII32:  "Te",
+		StringUTF832:   "T😀",
 		Bool:          true,
 		Bit1:          false,
 		Bit3:          false,
@@ -387,6 +401,8 @@ func BenchmarkBigEndianLowWordAllCustomExternMarshal(b *testing.B) {
 		StringASCII8:  "TestData1",
 		StringASCII16: "TestData2",
 		StringUTF816:  "TestDäta3", // add utf8 char
+		StringASCII32:  "Te",
+		StringUTF832:   "T😀",
 		Bool:          true,
 		Bit1:          false,
 		Bit3:          false,
@@ -432,6 +448,8 @@ func BenchmarkBigEndianLowWordAllCustomExternUnmarshal(b *testing.B) {
 		StringASCII8:  "TestData1",
 		StringASCII16: "TestData2",
 		StringUTF816:  "TestDäta3", // add utf8 char
+		StringASCII32:  "Te",
+		StringUTF832:   "T😀",
 		Bool:          true,
 		Bit1:          false,
 		Bit3:          false,

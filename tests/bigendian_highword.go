@@ -31,6 +31,8 @@ type BigEndianHighWord struct {
 	Uint32Array   [5]uint32  `protoreg:"offset=59"`
 	Float32Array  [5]float32 `protoreg:"offset=79"`
 	BoolArray     [5]bool    `protoreg:"offset=89"`
+	StringASCII32 string     `protoreg:"offset=96,size=4,char=32"`
+	StringUTF832  string     `protoreg:"offset=100,size=4,char=32,charencoding=utf8"`
 }
 
 type BigEndianHighWordAllCustom struct {
@@ -61,6 +63,8 @@ type BigEndianHighWordAllCustom struct {
 	Float32Array  [5]CustomFloat32         `protoreg:"offset=79"`
 	BoolArray     [5]CustomBool            `protoreg:"offset=89"`
 	BitField16    BitField16[CustomUint16] `protoreg:"offset=94"`
+	StringASCII32 CustomString             `protoreg:"offset=96,size=4,char=32"`
+	StringUTF832  CustomString             `protoreg:"offset=100,size=4,char=32,charencoding=utf8"`
 }
 
 type BigEndianHighWordAllCustomExtern struct {
@@ -91,4 +95,6 @@ type BigEndianHighWordAllCustomExtern struct {
 	Float32Array  [5]extern.CustomFloat32                `protoreg:"offset=79"`
 	BoolArray     [5]extern.CustomBool                   `protoreg:"offset=89"`
 	BitField16    extern.BitField16[extern.CustomUint16] `protoreg:"offset=94"`
+	StringASCII32 extern.CustomString                    `protoreg:"offset=96,size=4,char=32"`
+	StringUTF832  extern.CustomString                    `protoreg:"offset=100,size=4,char=32,charencoding=utf8"`
 }
