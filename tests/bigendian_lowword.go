@@ -2,7 +2,7 @@ package tests
 
 import "github.com/nocccer/protoreg/tests/extern"
 
-//go:generate go run ../main.go -type=BigEndianLowWord,BigEndianLowWordAllCustom,BigEndianLowWordAllCustomExtern -v
+//go:generate protoreg -type=BigEndianLowWord,BigEndianLowWordAllCustom,BigEndianLowWordAllCustomExtern -v
 
 type BigEndianLowWord struct {
 	_             struct{} `protoreg:"wordorder=low"`

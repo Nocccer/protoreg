@@ -2,7 +2,7 @@ package tests
 
 import "github.com/nocccer/protoreg/tests/extern"
 
-//go:generate go run ../main.go -type=BigEndianHighWord,BigEndianHighWordAllCustom,BigEndianHighWordAllCustomExtern -v
+//go:generate protoreg -type=BigEndianHighWord,BigEndianHighWordAllCustom,BigEndianHighWordAllCustomExtern -v
 
 type BigEndianHighWord struct {
 	Ignored       uint16

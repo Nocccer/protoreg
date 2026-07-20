@@ -1,6 +1,6 @@
 package tests
 
-//go:generate go run ../main.go -type=StringChar8BigEndian,StringChar8LittleEndian,StringUTF16BigEndian,StringUTF16LittleEndian,StringUTF32BigHighWord,StringUTF32LittleLowWord -v
+//go:generate protoreg -type=StringChar8BigEndian,StringChar8LittleEndian,StringUTF16BigEndian,StringUTF16LittleEndian,StringUTF32BigHighWord,StringUTF32LittleLowWord -v
 
 type StringChar8BigEndian struct {
 	_     struct{} `protoreg:"encoding=big"`

@@ -1,12 +1,12 @@
 package tests
 
-//go:generate go run ../main.go -type=CustomStructKey -key=myreg -v
+//go:generate protoreg -type=CustomStructKey -key=myreg -v
 
 type CustomStructKey struct {
 	UInt16 uint16 `myreg:"offset=0"`
 }
 
-//go:generate go run ../main.go -type=OnlyMarshaler,OnlyUnmarshaler,CustomFuncNames -v
+//go:generate protoreg -type=OnlyMarshaler,OnlyUnmarshaler,CustomFuncNames -v
 
 type OnlyMarshaler struct {
 	_      struct{} `protoreg:"mode=marshal"`

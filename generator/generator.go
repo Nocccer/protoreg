@@ -1,6 +1,9 @@
 package generator
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
+	"errors"
 	"fmt"
 	"go/ast"
 	"go/types"
@@ -25,6 +28,7 @@ type ProtoRegGen struct {
 	mode              GenMode
 	marshalFuncName   string
 	unmarshalFuncName string
+	packages          []*packages.Package
 }
 
 func NewGenerator(
@@ -58,11 +62,54 @@ func WithTagKey(tagKey string) func(*ProtoRegGen) {
 	}
 }
 
+func (g *ProtoRegGen) CacheKey(version string) (string, error) {
+	pkgs, err := g.loadPackages()
+	if err != nil {
+		return "", err
+	}
+
+	hash := sha256.New()
+	_, _ = fmt.Fprintf(hash, "version=%s\n", version)
+	_, _ = fmt.Fprintf(hash, "dir=%s\n", g.dir)
+	_, _ = fmt.Fprintf(hash, "types=%s\n", strings.Join(g.types, ","))
+	_, _ = fmt.Fprintf(hash, "key=%s\n", g.tagKey)
+
+	for _, p := range pkgs {
+		files := make([]string, 0, len(p.GoFiles))
+		files = append(files, p.GoFiles...)
+		files = slices.Compact(files)
+		slices.Sort(files)
+
+		for _, file := range files {
+			if file == "" {
+				continue
+			}
+
+			_, _ = fmt.Fprintf(hash, "file=%s\n", file)
+			//nolint:gosec // file is from the package, which is trusted
+			data, err := os.ReadFile(file)
+			if err != nil {
+				if errors.Is(err, os.ErrNotExist) {
+					continue
+				}
+				return "", err
+			}
+			hash.Write(data)
+		}
+	}
+
+	return hex.EncodeToString(hash.Sum(nil)), nil
+}
+
 func (g *ProtoRegGen) Generate() error {
-	pkgs, err := g.loadPackage()
+	pkgs, err := g.loadPackages()
 	if err != nil {
 		return err
 	}
+
+	g.content = ""
+	g.imports = nil
+	g.pkg = ""
 
 	for _, p := range pkgs {
 		g.pkg = p.Name
@@ -181,12 +228,22 @@ func (g *ProtoRegGen) WriteToFile(filename string) error {
 	return err
 }
 
-func (g *ProtoRegGen) loadPackage() ([]*packages.Package, error) {
+func (g *ProtoRegGen) loadPackages() ([]*packages.Package, error) {
+	if g.packages != nil {
+		return g.packages, nil
+	}
+
 	cfg := &packages.Config{
 		Mode: packages.NeedName | packages.NeedSyntax | packages.NeedFiles | packages.NeedTypesInfo,
 	}
 
-	return packages.Load(cfg, g.dir)
+	pkgs, err := packages.Load(cfg, g.dir)
+	if err != nil {
+		return nil, err
+	}
+
+	g.packages = pkgs
+	return g.packages, nil
 }
 
 type GenMode string

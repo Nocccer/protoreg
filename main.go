@@ -144,10 +144,12 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"log/slog"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime/debug"
 	"strings"
@@ -163,42 +165,19 @@ func main() {
 	typeFlag := flag.String(
 		"type",
 		"",
-		"List of struct names to generate unmarshaler/marshaler for.",
+		"Comma-separated list of struct names to generate unmarshaler/marshaler for (required).",
 	)
-	outputFlag := flag.String("o", "", "Output file name. Default is <file>_protoreg.go.")
+	outputFlag := flag.String("o", "", "Output file name. Default is <file>_<key>.go")
 	verbose := flag.Bool("v", false, "Enable verbose logging.")
 	keyFlag := flag.String("key", "protoreg", "Struct tag key to use.")
+	cacheDisabled := flag.Bool("no-cache", false, "Disable generation caching entirely.")
+	removeCache := flag.Bool(
+		"clean-cache",
+		false,
+		"Remove the protoreg cache directory from the Go cache root.",
+	)
 	version := flag.Bool("version", false, "Print version information and exit.")
 	flag.Parse()
-
-	if *version {
-		// Build-Informationen auslesen
-		info, ok := debug.ReadBuildInfo()
-		if !ok {
-			fmt.Println(
-				"No build information available. Please ensure the binary was built with module support.",
-			)
-			os.Exit(1)
-		}
-
-		// Main
-		fmt.Printf("Main.Version: %s\n", info.Main.Version)
-		fmt.Printf("Main.Path: %s\n", info.Main.Path)
-		fmt.Printf("GoVersion: %s\n", info.GoVersion)
-
-		// Settings
-		fmt.Println("\nSettings:")
-		for _, setting := range info.Settings {
-			fmt.Printf(" - %s: %s\n", setting.Key, setting.Value)
-		}
-
-		// Dependencies
-		fmt.Println("\nDependencies:")
-		for _, dep := range info.Deps {
-			fmt.Printf(" - %s@%s\n", dep.Path, dep.Version)
-		}
-		os.Exit(0)
-	}
 
 	level := slog.LevelInfo
 	if *verbose {
@@ -208,6 +187,24 @@ func main() {
 	log := slog.New(tint.NewTextHandler(os.Stderr, &tint.Options{
 		Level: level,
 	}))
+
+	info, ok := debug.ReadBuildInfo()
+	if !ok {
+		log.Error("failed to read build info")
+	}
+
+	if *version {
+		printVersionInfo(info)
+		return
+	}
+
+	if *removeCache {
+		if err := runClean(); err != nil {
+			log.Error("cleaning protoreg cache failed", slog.Any("err", err))
+			os.Exit(1)
+		}
+		return
+	}
 
 	if *typeFlag == "" {
 		log.Error("'-type' flag is required")
@@ -219,6 +216,7 @@ func main() {
 		slog.String("type", *typeFlag),
 		slog.String("output", *outputFlag),
 		slog.String("key", *keyFlag),
+		slog.Bool("no-cache", *cacheDisabled),
 	)
 
 	g := generator.NewGenerator(
@@ -228,17 +226,60 @@ func main() {
 		generator.WithTagKey(*keyFlag),
 	)
 
+	if *outputFlag == "" {
+		file := os.Getenv("GOFILE")
+		*outputFlag = fmt.Sprintf("%s_%s.go", strings.Split(filepath.Base(file), ".")[0], *keyFlag)
+	}
+
+	var cacheKey, cacheFile string
+	if !*cacheDisabled {
+		var err error
+		cacheKey, err = g.CacheKey(info.Main.Version)
+		if err != nil {
+			log.Error(
+				"failed to build generation cache key",
+				slog.String("error", err.Error()),
+			)
+			os.Exit(1)
+		}
+
+		cacheFile, err = resolveCachePath(*outputFlag)
+		if err != nil {
+			log.Error(
+				"failed to resolve generation cache path",
+				slog.String("file", *outputFlag),
+				slog.String("error", err.Error()),
+			)
+			os.Exit(1)
+		}
+	}
+
+	same, err := isCacheSame(*outputFlag, cacheFile, cacheKey)
+	if err != nil {
+		log.Error(
+			"failed to evaluate generation cache",
+			slog.String("file", *outputFlag),
+			slog.String("cache", cacheFile),
+			slog.String("error", err.Error()),
+		)
+		os.Exit(1)
+	}
+
+	if same && !*cacheDisabled {
+		log.Info(
+			"skipping generation because inputs have not changed",
+			slog.String("file", *outputFlag),
+			slog.String("cache", cacheFile),
+		)
+		return
+	}
+
 	if err := g.Generate(); err != nil {
 		log.Error(
 			"failed to generate marshaler",
 			slog.String("error", err.Error()),
 		)
 		os.Exit(1)
-	}
-
-	if *outputFlag == "" {
-		file := os.Getenv("GOFILE")
-		*outputFlag = fmt.Sprintf("%s_%s.go", strings.Split(filepath.Base(file), ".")[0], *keyFlag)
 	}
 
 	if err := g.WriteToFile(*outputFlag); err != nil {
@@ -248,6 +289,46 @@ func main() {
 			slog.String("error", err.Error()),
 		)
 		os.Exit(1)
+	}
+
+	if !*cacheDisabled {
+		if err := os.WriteFile(cacheFile, []byte(cacheKey), 0o600); err != nil {
+			log.Error(
+				"failed to write generation cache",
+				slog.String("file", cacheFile),
+				slog.String("error", err.Error()),
+			)
+			os.Exit(1)
+		}
+	}
+}
+
+func runClean() error {
+	gocache, err := getGoCacheDir()
+	if err != nil {
+		return fmt.Errorf("failed to resolve Go cache directory: %w", err)
+	}
+
+	if err := cleanCache(gocache); err != nil {
+		return fmt.Errorf("failed to clear protoreg cache: %w", err)
+	}
+
+	return nil
+}
+
+func printVersionInfo(info *debug.BuildInfo) {
+	fmt.Printf("Main.Version: %s\n", info.Main.Version)
+	fmt.Printf("Main.Path: %s\n", info.Main.Path)
+	fmt.Printf("GoVersion: %s\n", info.GoVersion)
+
+	fmt.Println("\nSettings:")
+	for _, setting := range info.Settings {
+		fmt.Printf(" - %s: %s\n", setting.Key, setting.Value)
+	}
+
+	fmt.Println("\nDependencies:")
+	for _, dep := range info.Deps {
+		fmt.Printf(" - %s@%s\n", dep.Path, dep.Version)
 	}
 }
 
@@ -266,6 +347,70 @@ func getPkg() string {
 	}
 
 	return filepath.Dir(args[0])
+}
+
+func resolveCachePath(outputPath string) (string, error) {
+	if outputPath == "" {
+		return "", nil
+	}
+
+	gocache, err := getGoCacheDir()
+	if err != nil {
+		return "", err
+	}
+
+	cacheDir := filepath.Join(gocache, "protoreg")
+	if err := os.MkdirAll(cacheDir, 0o750); err != nil {
+		return "", err
+	}
+
+	return filepath.Join(cacheDir, filepath.Base(outputPath)+".cache"), nil
+}
+
+func cleanCache(gocache string) error {
+	cacheDir := filepath.Join(gocache, "protoreg")
+	return os.RemoveAll(cacheDir)
+}
+
+func getGoCacheDir() (string, error) {
+	gocache := os.Getenv("GOCACHE")
+	if gocache != "" {
+		return gocache, nil
+	}
+
+	cmd := exec.Command("go", "env", "GOCACHE")
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return "", fmt.Errorf("resolve go cache dir: %w", err)
+	}
+
+	return strings.TrimSpace(string(output)), nil
+}
+
+func isCacheSame(
+	outputPath, cachePath, cacheKey string,
+) (bool, error) {
+	if outputPath == "" {
+		return false, nil
+	}
+
+	if _, err := os.Stat(outputPath); err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return false, nil
+		}
+		return false, err
+	}
+
+	//nolint:gosec // cachePath is created by ourself from GOCACHE
+	cacheData, err := os.ReadFile(cachePath)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return false, nil
+		}
+		return false, err
+	}
+
+	return string(cacheData) == cacheKey, nil
 }
 
 // isDirectory reports whether the given path is a valid directory.

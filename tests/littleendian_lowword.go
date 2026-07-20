@@ -2,7 +2,7 @@ package tests
 
 import "github.com/nocccer/protoreg/tests/extern"
 
-//go:generate go run ../main.go -type=LittleEndianLowWord,LittleEndianLowWordAllCustom,LittleEndianLowWordAllCustomExtern -v
+//go:generate protoreg -type=LittleEndianLowWord,LittleEndianLowWordAllCustom,LittleEndianLowWordAllCustomExtern -v
 
 type LittleEndianLowWord struct {
 	_             struct{} `protoreg:"encoding=little,wordorder=low"`
