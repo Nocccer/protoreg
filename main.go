@@ -21,6 +21,10 @@
 //	    Enable verbose (debug) logging
 //	-key string
 //	    Struct tag key to use (default: "protoreg")
+//	-no-cache
+//	    Disable generation caching and always regenerate the output.
+//	-clean-cache
+//	    Remove cached generation state from the Go cache directory.
 //
 // # Struct Tags
 //

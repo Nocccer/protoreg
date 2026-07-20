@@ -39,10 +39,17 @@ Common flags (see `cmd/main.go` for full docs):
 - `-o`: output file name (default: `<file>_protoreg.go`).
 - `-v`: verbose logging.
 - `-key`: struct tag key to use (default: `protoreg`).
+- `-no-cache`: disable caching and always regenerate the output.
+- `-clean-cache`: remove cached generation state from the Go cache directory.
 
 When used with `go:generate` the tool automatically detects the calling
 package and file. Example `go:generate` usage is present in the `tests/`
 package.
+
+### Caching
+
+Caching is enabled by default. Use `-no-cache` to force regeneration for a
+single run, or `-clean-cache` to clear previously cached generation state for all.
 
 ## Struct tags
 
